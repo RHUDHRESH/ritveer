@@ -1,0 +1,24 @@
+# Ritveer Operational Policies
+# Human-readable rules that agents will use for decision-making.
+
+supplier_policy:
+  three_strike_rule:
+    max_late_deliveries: 2
+    max_quality_disputes: 1
+    # After hitting these limits, a supplier is auto-blacklisted.
+
+commit_agent:
+  pooling_rule:
+    min_cost_saving_percentage: 8.0 # Pool if pooled cost is at least 8% cheaper.
+    max_sla_risk_percentage: 15.0  # Pool only if estimated delivery delay risk is <= 15%.
+
+cash_agent:
+  ledger_quarantine:
+    max_unapproved_delta_inr: 25000 # Any single transaction > ₹25k requires manual sign-off.
+
+fraud_detection:
+  redis_bloom_filter:
+    # Settings for the RedisBloom filter used by the GuardAgent
+    key_name: "fraud_user_ids"
+    error_rate: 0.001
+    initial_capacity: 100000

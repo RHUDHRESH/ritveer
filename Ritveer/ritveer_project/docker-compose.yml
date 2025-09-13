@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  ollama:
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./ollama_data:/root/.ollama
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  postgis:
+    image: postgis/postgis
+    environment:
+      - POSTGRES_DB=ritveer
+      - POSTGRES_USER=ritveer
+      - POSTGRES_PASSWORD=ritveer
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    depends_on:
+      - ollama
+      - redis
+      - postgis
+    env_file:
+      - .env
