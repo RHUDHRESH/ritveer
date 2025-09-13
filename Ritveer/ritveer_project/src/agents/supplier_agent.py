@@ -1,116 +1,135 @@
-from typing import Any, Dict, List
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.output_parsers import JsonOutputParser
-from src.graph.state import RitveerState
-from config.settings import settings
-from src.graph.workflow import reasoning_llm
-from src.tools.scraper_tools import scrape_supplier_website
-from src.tools.twilio_tools import make_call
+import asyncio, time, uuid
+from pydantic import BaseModel
+from datetime import datetime, timedelta, timezone
+from typing import Optional
+from src.tools.messaging.telegram_client import TelegramClient
+from src.tools.dao import dao, tokens
+from src.tools.scoring import score_supplier_quote
 
-# Define the JSON schema for the supplier selection
-SUPPLIER_SELECTION_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "suppliers_to_call": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "name": {"type": "string", "description": "Name of the supplier."},
-                    "phone_number": {"type": "string", "description": "Phone number of the supplier."},
-                    "reason": {"type": "string", "description": "Reason for selecting this supplier."},
-                },
-                "required": ["name", "phone_number", "reason"],
-            },
-            "description": "List of suppliers to call based on scraped data and policy.",
-        }
-    },
-    "required": ["suppliers_to_call"],
-}
+class RFPMeta(BaseModel):
+    rfp_id: str
+    round: int
+    deadline_utc: datetime
+    invited_supplier_ids: list[str]
 
-# Craft a system prompt for the reasoning LLM to select suppliers
-supplier_selection_prompt = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            "You are a procurement specialist. Your task is to analyze the provided artisan clusters "
-            "and scraped supplier data to decide which suppliers to call for a quote. "
-            "Consider the item, quantity, and budget from the normalized request. "
-            "Prioritize suppliers that are geographically close (from artisan clusters) and offer competitive prices. "
-            "Output your decision in a strict JSON schema:\n"
-            f"{SUPPLIER_SELECTION_SCHEMA}\n"
-            "Ensure your output is a valid JSON object that conforms to the schema."
-        ),
-        ("human", "Normalized Request: {normalized_request}\nArtisan Clusters: {artisan_clusters}\nScraped Data: {scraped_data}"),
+class Quote(BaseModel):
+    supplier_id: str
+    amount_inr: int
+    lead_time_days: int
+    valid_till_utc: datetime
+    notes: str = ""
+    incoterm: str = "DAP"
+    credibility: float = 0.0
+    reasons: list[str] = []
+    status: str = "proposed"
+
+class SupplierOutput(BaseModel):
+    rfp: RFPMeta
+    quotes: list
+    shortlist: list
+    fallback_quote: Optional[Quote]
+    chosen_strategy: str
+    risk_flags: list
+
+async def send_rfp_telegram(client, supplier, rfp, link):
+    text = f"RFP {rfp['rfp_id']} for {rfp['cluster_label']} Qty {rfp['qty']} Due {rfp['deadline_utc']:%H:%M UTC}"
+    buttons = [
+        [{"text": "Quote now", "url": link}],
+        [{"text": "Decline", "callback_data": f"decline:{rfp['rfp_id']}"}]
     ]
-)
+    await client.send_buttons(supplier["telegram_chat_id"], text, buttons)
 
-# Create the chain for supplier selection
-supplier_selection_chain = supplier_selection_prompt | reasoning_llm | JsonOutputParser()
+def score_quote(q, supplier_stats, policy):
+    price_score = max(0.0, 1.0 - (q.amount_inr - policy["target_price"]) / max(1, policy["target_price"]))
+    speed_score = max(0.0, 1.0 - (q.lead_time_days - policy["target_lead_time"]) / max(1, policy["target_lead_time"]))
+    ot_rate = supplier_stats.get("on_time_rate", 0.8)
+    qa = supplier_stats.get("qa_score", 0.8)
+    proximity = supplier_stats.get("km_to_customer", 500)
+    prox_score = max(0.0, 1.0 - proximity / 1000.0)
+    credibility = 0.35*price_score + 0.25*speed_score + 0.2*ot_rate + 0.15*qa + 0.05*prox_score
+    reasons = []
+    if price_score > 0.8: reasons.append("under_band")
+    if speed_score > 0.8: reasons.append("fast_lead_time")
+    if ot_rate > 0.95: reasons.append("reliable")
+    return credibility, reasons
 
+async def supplier_node(state):
+    print("---SUPPLIER AGENT: RFP fan-out and collection---")
+    cluster = state["cluster"]["primary"]
+    intake = state["intake"]
+    policy = state["policy"]
+    sup_prev = state.get("supplier", {})
+    round_no = sup_prev.get("rfp", {}).get("round", 0) + 1
+    rfp_id = sup_prev.get("rfp", {}).get("rfp_id") or str(uuid.uuid4())
+    deadline = datetime.now(timezone.utc) + timedelta(minutes=policy.get("rfp_minutes", 20))
 
-def supplier_agent_node(state: RitveerState) -> Dict[str, Any]:
-    """
-    The supplier agent node scrapes websites, uses LLM to select suppliers to call,
-    makes calls, and updates supplier_quotes in the state.
-    """
-    print("---SUPPLIER AGENT: Processing supplier information---")
-    normalized_request = state.get("normalized_request", {})
-    artisan_clusters = state.get("artisan_clusters", [])
+    candidates = await dao.select_suppliers(cluster, limit=policy.get("invite_cap", 6))
 
-    item = normalized_request.get("item")
+    client = TelegramClient()
+    links = {}
+    for s in candidates:
+        token = tokens.sign({"rfp_id": rfp_id, "supplier_id": s["id"], "exp": int(deadline.timestamp())})
+        links[s["id"]] = f"{state['settings'].get('base_url', 'http://localhost:8000')}/rfp/{token}"
 
-    if not item:
-        print("SUPPLIER AGENT: No item found in normalized_request. Skipping supplier agent.")
-        return {"supplier_quotes": []}
+    rfp = {
+        "rfp_id": rfp_id,
+        "cluster_label": cluster["label"],
+        "qty": intake.get("entities", {}).get("quantity", 1),
+        "deadline_utc": deadline
+    }
 
-    # Step 1: Scrape websites for prices (placeholder for actual scraping logic)
-    # For demonstration, let's assume we have a list of dummy supplier URLs
-    supplier_urls = [
-        "http://example.com/supplierA",
-        "http://example.com/supplierB",
-        "http://example.com/supplierC",
-    ]
+    await asyncio.gather(*[
+        send_rfp_telegram(client, s, rfp, links[s["id"]])
+        for s in candidates
+    ])
 
-    scraped_data = []
-    for url in supplier_urls:
-        scraped_data.extend(scrape_supplier_website(url, item))
+    # Wait window with polling
+    poll_every = 5
+    while datetime.now(timezone.utc) < deadline:
+        await asyncio.sleep(poll_every)
+        if await dao.enough_quotes(rfp_id, policy.get("shortlist_k", 3)):
+            break
 
-    # Step 2: Use reasoning LLM to decide which suppliers to call
-    suppliers_to_call_decision = supplier_selection_chain.invoke(
-        {
-            "normalized_request": normalized_request,
-            "artisan_clusters": artisan_clusters,
-            "scraped_data": scraped_data,
-        }
-    )
+    quotes_data = await dao.fetch_quotes(rfp_id)
+    quotes = [Quote(**q, valid_till_utc=datetime.now(timezone.utc)+timedelta(hours=24)) for q in quotes_data]
 
-    suppliers_to_call = suppliers_to_call_decision.get("suppliers_to_call", [])
+    shortlist = []
+    pol = {"target_price": cluster["price_band_inr"][1], "target_lead_time": cluster["lead_time_days"]}
+    for q in quotes:
+        stats = await dao.supplier_stats(q.supplier_id)
+        cred, reasons = score_quote(q.dict(), stats, pol)
+        q.credibility = round(cred, 3)
+        q.reasons = reasons
+        # Update quote in DB with credibility and reasons
+        await dao.insert_quote(q.rfp_id, q.supplier_id, q.amount_inr, q.lead_time_days, q.notes, round_no,
+                               q.credibility, q.reasons)
+        shortlist.append(q)
+    shortlist.sort(key=lambda x: x.credibility, reverse=True)
 
-    # Step 3: Use Twilio voice tool to place calls and record responses (placeholder)
-    # For demonstration, we'll simulate call responses
-    supplier_quotes = []
-    for supplier in suppliers_to_call:
-        print(f"SUPPLIER AGENT: Calling {supplier['name']} at {supplier['phone_number']}")
-        # In a real scenario, make_call would trigger an actual call and
-        # you'd have a mechanism to record and process the response.
-        # For now, we'll simulate a quote.
+    fallback = None
+    risk_flags = []
+    if not shortlist:
+        hi = cluster["price_band_inr"][1]
+        fallback = Quote(
+            supplier_id="fallback",
+            amount_inr=int(hi*1.1),
+            lead_time_days=cluster["lead_time_days"]+3,
+            credibility=0.5,
+            reasons=["price_book", "risk_margin"],
+            valid_till_utc=datetime.now(timezone.utc)+timedelta(hours=6)
+        )
+        risk_flags.append("no_market_quotes")
 
-        # Dummy TwiML URL - replace with actual TwiML for recording
-        dummy_twiml_url = "http://demo.twilio.com/docs/voice.xml"
-        call_result = make_call(supplier["phone_number"], dummy_twiml_url)
+    state["supplier"] = SupplierOutput(
+        rfp=RFPMeta(rfp_id=rfp_id, round=round_no, deadline_utc=deadline, invited_supplier_ids=[c["id"] for c in candidates]),
+        quotes=quotes,
+        shortlist=shortlist[: policy.get("shortlist_k", 3)],
+        fallback_quote=fallback,
+        chosen_strategy="market" if shortlist else "fallback",
+        risk_flags=risk_flags
+    ).dict()
+    return state
 
-        # Simulate a quote based on scraped data or a random value
-        simulated_quote = {
-            "supplier_name": supplier['name'],
-            "item": item,
-            "price": f"{len(supplier['name']) * 100}", # Dummy price
-            "currency": "INR",
-            "call_sid": call_result.get("sid"),
-            "call_status": call_result.get("status"),
-            "notes": "Simulated quote from voice call."
-        }
-        supplier_quotes.append(simulated_quote)
-
-    # Step 4: Update the supplier_quotes field in the state
-    return {"supplier_quotes": supplier_quotes}
+def supplier_agent_node(state):  # Sync wrapper for LangGraph
+    asyncio.run(supplier_node(state))
+    return state

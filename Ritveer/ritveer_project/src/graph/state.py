@@ -1,8 +1,46 @@
-from typing import List, Tuple, Annotated, TypedDict, Optional, Any
+from typing import Dict, List, Optional, TypedDict, Literal, Any
+from pydantic import BaseModel, Field, constr
 from langchain_core.messages import BaseMessage
 
 
-class RitveerState(TypedDict):
+class IntakeOutput(BaseModel):
+    request_id: constr(strip_whitespace=True, min_length=8)
+    conversation_id: str
+    customer_id: Optional[str]
+    channel: Literal["whatsapp","web","ops_console"]
+    raw_text: str
+    language: str
+    translated_text: Optional[str]
+    intent: str
+    intent_confidence: float = Field(ge=0.0, le=1.0)
+    priority: Literal["low","normal","high","urgent"] = "normal"
+    entities: Dict[str, str] = {}
+    slot_gaps: List[str] = []
+    risk_flags: List[str] = []
+    next_actions_hint: Optional[str]
+    meta: Dict[str, str] = {}            # model, rule versions
+    timings_ms: Dict[str, int] = {}      # per substep
+
+class ClusterCandidate(BaseModel):
+    id: str
+    label: str
+    confidence: float
+    reasons: List[str]
+    centroid: List[float]            # optional for audit
+    price_band_inr: tuple[int, int]  # min,max
+    lead_time_days: int
+    location_hint: dict              # {"lat":..., "lon":..., "radius_km":...}
+    risk_flags: List[str]            # e.g. ["low_coverage","quality_decline"]
+
+class ClusterOutput(BaseModel):
+    primary: Optional[ClusterCandidate]
+    alternates: List[ClusterCandidate] = []
+    disambiguation_keys: List[str] = []   # which missing slots matter most
+    chosen_strategy: Literal["exact","nearest","fallback","rules_only", "skipped"]
+    metrics: Dict[str, float] = {}        # latency, neighbors_scanned, etc
+
+
+class RitveerState(TypedDict, total=False):
     """
     Represents the state of our graph. It contains the following:
 
@@ -17,8 +55,8 @@ class RitveerState(TypedDict):
     - `final_answer`: The final answer to the user's query.
 
     # --- NEW FIELDS FOR PHASE 1 --- #
-    raw_message: str
-    normalized_request: Optional[dict[str, Any]]
+    intake: IntakeOutput
+    cluster: ClusterOutput
     artisan_clusters: Optional[List[dict[str, Any]]]
     supplier_quotes: Optional[List[dict[str, Any]]]
     final_order: Optional[dict[str, Any]]
@@ -35,8 +73,8 @@ class RitveerState(TypedDict):
     final_answer: str
 
     # --- NEW FIELDS FOR PHASE 1 --- #
-    raw_message: str
-    normalized_request: Optional[dict[str, Any]]
+    intake: IntakeOutput
+    cluster: ClusterOutput
     artisan_clusters: Optional[List[dict[str, Any]]]
     supplier_quotes: Optional[List[dict[str, Any]]]
     final_order: Optional[dict[str, Any]]

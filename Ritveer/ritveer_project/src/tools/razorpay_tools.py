@@ -1,6 +1,8 @@
 import razorpay
 from typing import Dict, Any
 from config.settings import settings
+import requests # Import requests to catch connection errors
+from src.utils.redis_utils import add_to_retry_stream
 
 def create_payment_order(amount: float, currency: str, receipt: str) -> Dict[str, Any]:
     """
@@ -31,6 +33,15 @@ def create_payment_order(amount: float, currency: str, receipt: str) -> Dict[str
         
         order = client.order.create(order_payload)
         return order
+    except requests.exceptions.ConnectionError as e:
+        print(f"RAZORPAY TOOL: Network error creating payment order: {e}. Queuing for retry.")
+        task_details = {
+            "agent": "commit_agent", # Assuming commit_agent calls this tool
+            "tool": "create_payment_order",
+            "args": {"amount": amount, "currency": currency, "receipt": receipt}
+        }
+        add_to_retry_stream(task_details)
+        return {"status": "retry_queued", "message": f"Network error: {str(e)}. Task queued for retry."}
     except Exception as e:
         print(f"RAZORPAY TOOL: Error creating payment order: {e}")
-        return {"error": str(e)}
+        return {"status": "failed", "message": f"Razorpay API error: {str(e)}"}

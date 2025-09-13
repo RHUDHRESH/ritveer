@@ -47,8 +47,10 @@ def cash_agent_node(state: RitveerState) -> Dict[str, Any]:
 
     if "error" not in transaction_record:
         print(f"CASH AGENT: Transaction recorded successfully with status: {transaction_status}")
-        # You might want to update the state with transaction details if needed
-        return {}
+        if transaction_status == "pending_approval":
+            return {"cash_risk_high": True, "cash_agent_outcome": "pending_manual_review"}
+        else:
+            return {"cash_risk_high": False, "cash_agent_outcome": "approved"}
     else:
         print(f"CASH AGENT: Failed to record transaction: {transaction_record['error']}")
-        return {"error": "Failed to record transaction."}
+        return {"error": "Failed to record transaction.", "cash_agent_outcome": "failed"}
