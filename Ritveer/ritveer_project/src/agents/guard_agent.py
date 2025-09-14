@@ -1,13 +1,13 @@
 import os, re, time
 from typing import Dict, Any, List
 from pydantic import BaseModel
+from src.tools.policy import policy, is_profanity
 
 JAILBREAK = re.compile(r"(ignore\s+previous|bypass|system\s*prompt|do\s+anything|developer\s+mode)", re.I)
-PROFANITY = re.compile(r"\b(fuck|shit|bitch|bastard)\b", re.I)
 URL = re.compile(r"https?://\S+", re.I)
 ZERO_WIDTH = re.compile(r"[\u200B-\u200D\uFEFF]")
 
-def sanitize(text: str, policy) -> str:
+def sanitize(text: str, guard_policy) -> str:
     """Clean text for downstream safety"""
     # Remove zero-width characters
     t = ZERO_WIDTH.sub("", text)
@@ -16,7 +16,7 @@ def sanitize(text: str, policy) -> str:
     # Normalize quotes
     t = t.replace('"', '"').replace('"', '"')
     # Handle links per policy
-    if not policy.get("allow_links", True):
+    if not guard_policy.allow_links: # Assuming allow_links is a policy setting
         t = URL.sub("[link removed]", t)
     return t
 
@@ -43,7 +43,7 @@ async def guard_node(state: Dict[str, Any]) -> Dict[str, Any]:
     risk_flags = intake.get("risk_flags", [])
     chat_id = str(intake.get("meta", {}).get("chat_id", "anon"))
 
-    policy = state.get("policy", {}).get("guard", {})
+    guard_policy = policy.get().guard
     redis = state.get("redis")
 
     reasons = []
@@ -51,7 +51,7 @@ async def guard_node(state: Dict[str, Any]) -> Dict[str, Any]:
     ttl = 0
 
     # 1) Invalid signature - hard drop unless override
-    if "invalid_signature" in risk_flags and policy.get("drop_on_invalid_signature", True):
+    if "invalid_signature" in risk_flags and guard_policy.drop_on_invalid_signature:
         reasons.append("invalid_signature")
         action = "drop"
 
@@ -62,13 +62,13 @@ async def guard_node(state: Dict[str, Any]) -> Dict[str, Any]:
             reasons.append("replay")
             action = "drop"
         else:
-            ttl_sec = policy.get("dedupe_ttl_s", 120)
+            ttl_sec = guard_policy.dedupe_ttl_s
             redis.expire(key, ttl_sec)
 
     # 3) Rate limiting per user
     if chat_id != "anon" and redis and action != "drop":
-        burst_n = policy.get("per_user_burst_n", 5)
-        window_s = policy.get("per_user_burst_window_s", 30)
+        burst_n = guard_policy.per_user_burst_n
+        window_s = guard_policy.per_user_burst_window_s
 
         # Use sliding window by rounding timestamp
         window_key = f"guard:rate:{chat_id}:{int(time.time() // window_s)}"
@@ -83,13 +83,13 @@ async def guard_node(state: Dict[str, Any]) -> Dict[str, Any]:
             ttl = window_s
 
     # 4) Blacklisted content - route to ops for review
-    blacklist_words = policy.get("blacklist_words", [])
+    blacklist_words = guard_policy.blacklist_words
     if has_blacklist(text, blacklist_words) and action != "drop":
         reasons.append("blacklist_hit")
         action = "ops"
 
     # 5) Profanity check
-    if PROFANITY.search(text) and not policy.get("allow_profanity", False) and action == "pass":
+    if is_profanity(text) and not guard_policy.allow_profanity and action == "pass":
         reasons.append("profanity")
         action = "clarify"
 
@@ -99,7 +99,7 @@ async def guard_node(state: Dict[str, Any]) -> Dict[str, Any]:
         action = "clarify"
 
     # Sanitize text for downstream use
-    sanitized = sanitize(text, policy)
+    sanitized = sanitize(text, guard_policy)
 
     # Store result
     state["guard"] = GuardResult(

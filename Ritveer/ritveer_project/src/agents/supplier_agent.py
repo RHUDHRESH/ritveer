@@ -5,6 +5,9 @@ from typing import Optional
 from src.tools.messaging.telegram_client import TelegramClient
 from src.tools.dao import dao, tokens
 from src.tools.scoring import score_supplier_quote
+import httpx
+import os
+from src.tools.policy import policy
 
 class RFPMeta(BaseModel):
     rfp_id: str
@@ -130,6 +133,35 @@ async def supplier_node(state):
     ).dict()
     return state
 
-def supplier_agent_node(state):  # Sync wrapper for LangGraph
-    asyncio.run(supplier_node(state))
+def supplier_agent_node(state):  # Sync wrapper for LangGraph, now discovery
+    asyncio.run(supplier_discovery_node(state))
+    return state
+
+async def supplier_discovery_node(state: dict) -> dict:
+    t0 = time.time()
+    prof = state.get("profile", {})
+    region = prof.get("location","").split(",")[0].strip() if prof.get("location") else None
+    mats = prof.get("materials") or []
+    material = mats[0] if mats else "clay"
+    k = policy.get().negotiation.shortlist_k
+
+    API_BASE = os.getenv("API_BASE", "http://localhost:8000")
+    async with httpx.AsyncClient(timeout=10) as c:
+        try:
+            r = await c.get(f"{API_BASE}/suppliers/search", params={"material": material, "region": region, "k": k})
+            r.raise_for_status()
+            results = r.json().get("results", [])
+        except Exception:
+            results = []
+
+    state["suppliers"] = results
+    out = "No suppliers found" if not results else "\n".join([f"- {s['name']} • {s['region']} • {s['band']} • rel {s['reliability']}" for s in results])
+    ts = str(datetime.utcnow())
+    state["events"].append({
+        "ts": ts,
+        "agent": "SupplierDiscoveryAgent",
+        "type": "processed",
+        "data": {"summary": out}
+    })
+    state["agents"]["SupplierDiscoveryAgent"] = {"status": "completed", "output": None, "ms": int((time.time() - t0)*1000), "reasons": []}
     return state

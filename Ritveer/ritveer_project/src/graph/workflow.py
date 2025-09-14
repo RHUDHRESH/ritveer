@@ -2,6 +2,24 @@ from langgraph.graph import StateGraph, END
 from typing import Dict, Any
 from pydantic import BaseModel
 from datetime import datetime
+from src.tools.policy import policy as policy_store
+
+# Initialize state with contract
+def initialize_state(**kwargs) -> Dict[str, Any]:
+    state = {
+        "messages": [],
+        "profile": {},
+        "story": {},
+        "bom": {},
+        "suppliers": [],
+        "quote": {},
+        "events": [],
+        "artifacts": {},
+        "policy": policy_store.dict(),
+        "agents": {},
+    }
+    state.update(kwargs)
+    return state
 
 class RitveerState(Dict[str, Any]):
     pass  # Define as needed based on your state structure
@@ -45,27 +63,27 @@ def intake_node(state: RitveerState) -> RitveerState:
 
 def intake_router(state: RitveerState) -> str:
     print("Executing Intake Router...")
-    intake_data = state.get("intake")
-    if not intake_data:
+    intake_output = state.get("agents", {}).get("intake", {}).get("output")
+    if not intake_output:
         return "Ops" # Fallback if intake data is missing
 
-    flags = set(intake_data.get("risk_flags", []))
+    flags = set(intake_output.get("risk_flags", []))
     if "invalid_signature" in flags or "spam" in flags or "blacklist_hit" in flags:
         print("---ROUTER: Routing to Guard Agent (Risk Flags)---")
         return "Guard"
-    if intake_data.get("meta", {}).get("duplicate") == "true":
+    if intake_output.get("meta", {}).get("duplicate") == "true":
         print("---ROUTER: Routing to END (Duplicate)---")
         return "drop"
-    if intake_data.get("intent") == "unsupported":
+    if intake_output.get("intent") == "unsupported":
         print("---ROUTER: Routing to Ops Agent (Unsupported Intent)---")
         return "Ops"
-    if intake_data.get("slot_gaps"):
+    if intake_output.get("slot_gaps"):
         print("---ROUTER: Routing to Clarify Agent (Slot Gaps)---")
         return "Clarify"
-    if intake_data.get("language") not in {"en","hi"}: # Assuming "en", "hi" are supported directly
+    if intake_output.get("language") not in {"en","hi"}: # Assuming "en", "hi" are supported directly
         print("---ROUTER: Routing to Translate Agent (Unsupported Language)---")
         return "Translate"
-    
+
     print("---ROUTER: Routing to Cluster Agent (Happy Path)---")
     return "Cluster"
 

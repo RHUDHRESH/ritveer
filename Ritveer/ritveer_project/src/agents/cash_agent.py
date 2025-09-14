@@ -1,6 +1,5 @@
 from typing import Any, Dict
 from src.graph.state import RitveerState
-from config.settings import settings
 from src.tools.postgis_tools import record_transaction
 
 def cash_agent_node(state: RitveerState) -> Dict[str, Any]:
@@ -24,9 +23,17 @@ def cash_agent_node(state: RitveerState) -> Dict[str, Any]:
         print("CASH AGENT: Missing payment details. Skipping transaction recording.")
         return {}
 
-    # Get ledger quarantine rules from policy config
-    ledger_rules = settings.POLICY_CONFIG.get("cash_agent", {}).get("ledger_quarantine", {})
-    max_unapproved_delta_inr = ledger_rules.get("max_unapproved_delta_inr", 0)
+    p = state["policy"]
+    expiry_min = p["expiry_minutes"]
+    underpay_tol = p["underpay_tolerance_inr"]
+    prepay_required = p["prepay_required"]
+    threshold = p["prepay_threshold_inr"]
+
+    # The following ledger quarantine rules are not part of the new policy schema.
+    # Please update the policy.yml and Policy schema if these are still needed.
+    # ledger_rules = settings.POLICY_CONFIG.get("cash_agent", {}).get("ledger_quarantine", {})
+    # max_unapproved_delta_inr = ledger_rules.get("max_unapproved_delta_inr", 0)
+    max_unapproved_delta_inr = 0 # Placeholder, needs to be defined in policy if required
 
     transaction_status = "approved"
     if amount > max_unapproved_delta_inr:

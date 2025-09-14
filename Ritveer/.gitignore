@@ -1,0 +1,41 @@
+# Ignore virtual environments
+.env
+.venv
+virtualenv/
+env/
+
+# Ignore Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Ignore IDE and editor files
+.idea/
+.vscode/
+*.swp
+
+# Ignore build artifacts
+build/
+dist/
+*.egg-info/
+
+# Ignore notebooks checkpoints
+.ipynb_checkpoints/
+
+# Ignore untracked files outside the project directory
+../
+
+# Ignore project-specific untracked files and directories
+ritveer_project/data/
+ritveer_project/scripts/
+ritveer_project/src/api/__pycache__/
+ritveer_project/src/agents/__pycache__/
+ritveer_project/src/dao/__pycache__/
+ritveer_project/src/graph/__pycache__/
+ritveer_project/src/tools/__pycache__/
+ritveer_project/src/utils/__pycache__/
+ritveer_project/src/__pycache__/
+frontend/node_modules/
+frontend/package-lock.json
+local.db
+.pytest_cache/
