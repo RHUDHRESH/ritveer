@@ -20,6 +20,7 @@ from .api.catalog import router as catalog_router
 from .api.catalog_share import router as catalog_share_router
 from .api.suppliers import router as suppliers_router
 from .api.research import router as research_router
+from .api.maps import router as maps_router
 from .state.store import reset_state
 # from .api.suppliers import router as suppliers_router  # TODO: Implement
 from src.tools.policy import policy as policy_store, env_overrides
@@ -52,6 +53,7 @@ app.include_router(catalog_router)
 app.include_router(catalog_share_router)
 app.include_router(suppliers_router)
 app.include_router(research_router)
+app.include_router(maps_router)
 # app.state.workflow = workflow_app  # TODO: Fix imports
 
 @app.post("/invoke")
