@@ -1,0 +1,92 @@
+# ArtisanHub Refund Policies Configuration
+# Purpose: Comprehensive refund policy configuration for artisan marketplace
+# Version: 1.0
+# Effective Date: 2025-01-01
+
+# Allowed reasons for refund requests
+allowed_refund_reasons:
+  - "Product damaged during shipping"
+  - "Product not as described"
+  - "Wrong item received"
+  - "Quality issues or defects"
+  - "Late delivery beyond agreed timeframe"
+  - "Customer changed mind (within grace period)"
+
+# Materials or product types excluded from refunds
+excluded_materials:
+  - "Custom-made items"
+  - "Perishable goods"
+  - "Digital products"
+  - "Personalized items"
+  - "Clearance or sale items"
+
+# Processing fees for different scenarios
+processing_fee:
+  standard_fee: 5.0
+  expedited_fee: 15.0
+  international_fee: 25.0
+  currency: "USD"
+
+# Refund percentage based on time elapsed since purchase
+refund_percentage:
+  within_7_days: 100.0
+  within_14_days: 90.0
+  within_30_days: 75.0
+  after_30_days: 50.0
+
+# Refund window in days for different product categories
+refund_window_days:
+  standard_products: 30
+  electronics: 14
+  custom_items: 7
+  perishable_goods: 3
+
+# Regional variations
+regional_policies:
+  US:
+    refund_window_days: 30
+    restocking_fee: 10.0
+    free_return_shipping: true
+  CA:
+    refund_window_days: 30
+    restocking_fee: 0.0
+    free_return_shipping: true
+  GB:
+    refund_window_days: 28
+    restocking_fee: 15.0
+    free_return_shipping: false
+  AU:
+    refund_window_days: 30
+    restocking_fee: 5.0
+    free_return_shipping: true
+
+# High-value item thresholds
+high_value_threshold: 1000.0
+high_value_requires_approval: true
+high_value_approval_timeout_days: 3
+
+# Automatic approval rules
+auto_approve_threshold: 100.0
+auto_approve_max_items: 5
+auto_approve_eligible_reasons:
+  - "Wrong item received"
+  - "Product damaged during shipping"
+
+# Refund method preferences
+refund_methods:
+  - "Original payment method"
+  - "Store credit"
+  - "Bank transfer"
+  - "Check"
+
+# Customer service contact
+support_contact:
+  email: "refunds@artisanhub.com"
+  phone: "+1-800-ARTISAN"
+  hours: "Mon-Fri 9AM-6PM EST"
+
+# Policy metadata
+version: "1.0"
+effective_date: "2025-01-01"
+last_updated: "2025-01-01"
+policy_owner: "Customer Service Team"

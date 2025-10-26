@@ -1,0 +1,16 @@
+
+refund_window_days: 30
+partial_refund_allowed: true
+restocking_fee_percent: 10.0
+eligible_regions:
+  - US
+  - CA
+  - GB
+excluded_categories:
+  - digital
+  - perishable
+requires_approval: false
+auto_approve_threshold: 500.0
+currency: "USD"
+version: "1.0"
+effective_date: "2025-01-01"

@@ -1,0 +1,2201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArtisanHub Professional Intelligence Platform</title>
+    
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css">
+    <!-- Leaflet CSS for Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <!-- AOS Animation Library -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <!-- Swiper CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            /* HIGH CONTRAST BLACK & WHITE THEME */
+            --bg-primary: #000000;
+            --bg-secondary: #1a1a1a;
+            --bg-card: #2a2a2a;
+            --bg-hover: #3a3a3a;
+            --text-primary: #ffffff;
+            --text-secondary: #cccccc;
+            --text-muted: #888888;
+            --accent-bright: #ffffff;
+            --accent-gray: #666666;
+            --border-color: #444444;
+            --border-bright: #888888;
+            --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.8);
+            --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.9);
+            --shadow-hard: 0 15px 40px rgba(0, 0, 0, 1);
+            --shadow-glow: 0 0 40px rgba(255, 255, 255, 0.3);
+            --loading-accent: #ffffff;
+            --success-color: #00ff00;
+            --warning-color: #ffaa00;
+            --error-color: #ff0000;
+            --info-color: #00aaff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            font-weight: 400;
+            line-height: 1.6;
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-bright);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-gray);
+        }
+
+        /* Advanced Sidebar */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -320px;
+            width: 320px;
+            height: 100vh;
+            background: var(--bg-secondary);
+            border-right: 2px solid var(--border-color);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+            overflow-y: auto;
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow-hard);
+        }
+
+        .sidebar.active {
+            left: 0;
+            box-shadow: 5px 0 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .sidebar-header {
+            background: var(--bg-card);
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .sidebar-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+        }
+
+        .sidebar-header h3 {
+            color: var(--text-primary);
+            font-weight: 800;
+            margin: 0;
+            font-size: 1.3rem;
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .sidebar-nav {
+            padding: 1.5rem 0;
+        }
+
+        .nav-category {
+            padding: 1rem 1.5rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 1rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            color: var(--text-primary);
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-left: 4px solid transparent;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent 0%, rgba(255, 107, 53, 0.1) 100%);
+            transition: left 0.3s ease;
+        }
+
+        .nav-item:hover::before {
+            left: 0;
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 107, 53, 0.1);
+            border-left-color: var(--accent-orange);
+            color: var(--accent-orange);
+            transform: translateX(5px);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(90deg, rgba(255, 107, 53, 0.15) 0%, rgba(247, 37, 133, 0.1) 100%);
+            border-left-color: var(--accent-orange);
+            color: var(--accent-orange);
+        }
+
+        .nav-item.active::after {
+            content: '';
+            position: absolute;
+            right: 1.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 6px;
+            height: 6px;
+            background: var(--accent-orange);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent-orange);
+        }
+
+        .nav-item i {
+            margin-right: 1rem;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .nav-badge {
+            margin-left: auto;
+            background: var(--primary-gradient);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* Professional Hamburger */
+        .hamburger {
+            position: fixed;
+            top: 1.5rem;
+            left: 1.5rem;
+            z-index: 1001;
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 15px;
+            padding: 1rem;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow-medium);
+            backdrop-filter: blur(10px);
+        }
+
+        .hamburger:hover {
+            transform: scale(1.05) rotate(5deg);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .hamburger.active {
+            left: 340px;
+            background: var(--secondary-gradient);
+        }
+
+        .hamburger i {
+            font-size: 1.5rem;
+            transition: transform 0.3s ease;
+        }
+
+        .hamburger.active i {
+            transform: rotate(90deg);
+        }
+
+        /* Main Content Area */
+        .main-content {
+            margin-left: 0;
+            padding: 6rem 2rem 2rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .main-content.shifted {
+            margin-left: 320px;
+        }
+
+        /* Professional Header */
+        .professional-header {
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-card) 50%, var(--bg-hover) 100%);
+            padding: 4rem 3rem;
+            border-radius: 25px;
+            margin-bottom: 3rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-hard);
+            border: 2px solid var(--border-color);
+        }
+
+        .professional-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path fill="%23FF9933" d="M0,0 L50,0 L100,50 L50,100 L0,100 Z"/><path fill="%23138808" d="M50,0 L100,0 L100,100 L50,100 Z"/><path fill="%23000080" d="M75,0 L100,50 L75,100 Z"/><circle fill="%23FFFFFF" cx="50" cy="50" r="15" opacity="0.3"/></svg>') no-repeat center;
+            background-size: 150px 150px;
+            opacity: 0.08;
+            animation: slowRotate 60s linear infinite;
+        }
+
+        @keyframes slowRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .brand-title {
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: var(--text-primary);
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+            position: relative;
+            z-index: 1;
+            margin-bottom: 0.5rem;
+            letter-spacing: -1px;
+        }
+
+        .brand-subtitle {
+            color: var(--text-primary);
+            opacity: 0.95;
+            font-weight: 400;
+            position: relative;
+            z-index: 1;
+            font-size: 1.2rem;
+        }
+
+        /* Section Styles */
+        .content-section {
+            display: none;
+            animation: sectionFadeIn 0.6s ease-out;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        @keyframes sectionFadeIn {
+            0% {
+                opacity: 0;
+                transform: translateY(40px) scale(0.95);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Professional Cards */
+        .professional-card {
+            background: linear-gradient(145deg, var(--card-bg) 0%, var(--sidebar-bg) 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 25px;
+            padding: 2.5rem;
+            margin-bottom: 2.5rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-medium);
+        }
+
+        .professional-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary-gradient);
+            border-radius: 25px 25px 0 0;
+        }
+
+        .professional-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            border-color: var(--accent-orange);
+            box-shadow: var(--shadow-hard);
+            background: linear-gradient(145deg, var(--card-hover) 0%, var(--sidebar-bg) 100%);
+        }
+
+        .card-title {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            color: var(--accent-orange);
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .card-title::after {
+            content: '';
+            position: absolute;
+            bottom: -0.5rem;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background: var(--primary-gradient);
+            border-radius: 2px;
+        }
+
+        .card-title i {
+            margin-right: 1rem;
+            font-size: 1.8rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Status Cards with Animations */
+        .status-card {
+            background: linear-gradient(145deg, rgba(255, 107, 53, 0.1) 0%, rgba(247, 37, 133, 0.05) 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .status-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 107, 53, 0.05) 0%, transparent 70%);
+            animation: statusFloat 8s ease-in-out infinite;
+        }
+
+        @keyframes statusFloat {
+            0%, 100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+            50% { transform: translate(-50%, -50%) scale(1.1) rotate(180deg); }
+        }
+
+        .status-card:hover {
+            background: linear-gradient(145deg, rgba(255, 107, 53, 0.15) 0%, rgba(247, 37, 133, 0.1) 100%);
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .status-number {
+            font-size: 3rem;
+            font-weight: 900;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            animation: numberPop 0.6s ease-out;
+        }
+
+        @keyframes numberPop {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .status-label {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Advanced Input Fields */
+        .professional-input {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+            border: 2px solid var(--border-color);
+            border-radius: 20px;
+            padding: 1.25rem;
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 100%;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .professional-input:focus {
+            outline: none;
+            border-color: var(--accent-orange);
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+            box-shadow: 0 0 0 6px rgba(255, 107, 53, 0.2), var(--shadow-soft);
+            transform: translateY(-2px);
+        }
+
+        .professional-textarea {
+            min-height: 140px;
+            resize: vertical;
+        }
+
+        /* Professional Buttons */
+        .professional-btn {
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 50px;
+            padding: 1.25rem 2.5rem;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow-medium);
+            position: relative;
+            overflow: hidden;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.95rem;
+        }
+
+        .professional-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.2) 100%);
+            transition: left 0.4s ease;
+        }
+
+        .professional-btn:hover::before {
+            left: 100%;
+        }
+
+        .professional-btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .professional-btn:active {
+            transform: translateY(-1px) scale(1.02);
+        }
+
+        /* Map Container */
+        #map-container {
+            height: 450px;
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 2rem;
+            border: 2px solid var(--border-color);
+            box-shadow: var(--shadow-medium);
+        }
+
+        /* Opportunity Cards */
+        .opportunity-card {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+            border-left: 4px solid var(--accent-orange);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .opportunity-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent 0%, rgba(255, 107, 53, 0.05) 100%);
+            transition: left 0.4s ease;
+        }
+
+        .opportunity-card:hover::before {
+            left: 100%;
+        }
+
+        .opportunity-card:hover {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.02) 100%);
+            transform: translateX(8px) scale(1.02);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .opportunity-title {
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+            font-size: 1.2rem;
+        }
+
+        .opportunity-details {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.7;
+        }
+
+        .price-tag {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 1rem;
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+            animation: tagFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes tagFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+
+        /* Enhanced Loading Overlay with AI Thinking Status */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(15px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .ai-thinking {
+            text-align: center;
+            color: var(--text-primary);
+            padding: 3rem;
+            background: var(--bg-card);
+            border-radius: 25px;
+            box-shadow: var(--shadow-hard);
+            border: 3px solid var(--accent-bright);
+            position: relative;
+            overflow: hidden;
+            max-width: 500px;
+            animation: thinkingPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes thinkingPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .ai-thinking::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent-bright) 0%, var(--accent-gray) 50%, var(--accent-bright) 100%);
+            background-size: 200% 100%;
+            animation: loadingProgress 2s linear infinite;
+        }
+
+        @keyframes loadingProgress {
+            0% { background-position: 0% 0%; }
+            100% { background-position: 200% 0%; }
+        }
+
+        .ai-spinner {
+            width: 80px;
+            height: 80px;
+            border: 5px solid rgba(255, 255, 255, 0.1);
+            border-top: 5px solid var(--accent-bright);
+            border-right: 5px solid var(--accent-gray);
+            border-radius: 50%;
+            animation: professionalSpin 1s linear infinite;
+            margin: 0 auto 2rem;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
+            position: relative;
+        }
+
+        .ai-spinner::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid var(--accent-gray);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: professionalSpin 0.6s linear infinite reverse;
+        }
+
+        @keyframes professionalSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .ai-thinking-dots {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 1.5rem 0;
+        }
+
+        .thinking-dot {
+            width: 12px;
+            height: 12px;
+            background: var(--accent-bright);
+            border-radius: 50%;
+            animation: thinkingDot 1.5s ease-in-out infinite;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .thinking-dot:nth-child(1) { animation-delay: 0s; }
+        .thinking-dot:nth-child(2) { animation-delay: 0.3s; }
+        .thinking-dot:nth-child(3) { animation-delay: 0.6s; }
+
+        @keyframes thinkingDot {
+            0%, 80%, 100% { 
+                transform: scale(0.8); 
+                opacity: 0.5;
+            }
+            40% { 
+                transform: scale(1.2); 
+                opacity: 1;
+            }
+        }
+
+        /* Charts Container */
+        .chart-container {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-soft);
+        }
+
+        /* Progress Bars */
+        .progress-custom {
+            height: 8px;
+            border-radius: 10px;
+            background: var(--border-color);
+            overflow: hidden;
+        }
+
+        .progress-bar-custom {
+            background: var(--primary-gradient);
+            border-radius: 10px;
+            transition: width 1s ease;
+        }
+
+        /* Alert Styles */
+        .alert-custom {
+            border-radius: 15px;
+            border: none;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-soft);
+        }
+
+        .alert-success-custom {
+            background: linear-gradient(145deg, rgba(76, 175, 80, 0.2) 0%, rgba(76, 175, 80, 0.1) 100%);
+            border-left: 4px solid #4CAF50;
+        }
+
+        .alert-danger-custom {
+            background: linear-gradient(145deg, rgba(244, 67, 54, 0.2) 0%, rgba(244, 67, 54, 0.1) 100%);
+            border-left: 4px solid #f44336;
+        }
+
+        /* Swiper Styles */
+        .swiper {
+            width: 100%;
+            height: 300px;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .swiper-slide {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .main-content {
+                padding: 5rem 1.5rem 1.5rem;
+            }
+            
+            .brand-title {
+                font-size: 3rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 5rem 1rem 1rem;
+            }
+            
+            .hamburger.active {
+                left: 1rem;
+            }
+            
+            .sidebar {
+                width: 280px;
+                left: -280px;
+            }
+            
+            .brand-title {
+                font-size: 2.2rem;
+            }
+            
+            .professional-header {
+                padding: 3rem 2rem;
+            }
+            
+            .status-number {
+                font-size: 2.5rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .main-content {
+                padding: 4rem 1rem 1rem;
+            }
+            
+            .brand-title {
+                font-size: 1.8rem;
+            }
+            
+            .professional-header {
+                padding: 2.5rem 1.5rem;
+            }
+            
+            .professional-card {
+                padding: 2rem;
+            }
+        }
+
+        /* Accessibility */
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        /* Focus States */
+        *:focus {
+            outline: 2px solid var(--accent-orange);
+            outline-offset: 2px;
+        }
+
+        /* Print Styles */
+        @media print {
+            .sidebar, .hamburger {
+                display: none;
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+        }
+
+        /* High Contrast Mode */
+        @media (prefers-contrast: high) {
+            :root {
+                --border-color: #ffffff;
+                --text-secondary: #ffffff;
+            }
+        }
+
+        /* Reduced Motion */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Advanced Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="ai-thinking" data-aos="zoom-in">
+            <div class="ai-spinner"></div>
+            <h3 class="mt-3">AI is analyzing your craft...</h3>
+            <p class="text-secondary">Using Llama3.1 for intelligent analysis</p>
+            <div class="ai-thinking-dots">
+                <div class="thinking-dot"></div>
+                <div class="thinking-dot"></div>
+                <div class="thinking-dot"></div>
+            </div>
+            <div class="progress-custom mt-3">
+                <div class="progress-bar-custom" style="width: 0%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Professional Hamburger Menu -->
+    <button class="hamburger" id="hamburgerBtn" aria-label="Toggle navigation menu">
+        <i class="bi bi-list"></i>
+    </button>
+
+    <!-- Advanced Sidebar -->
+    <nav class="sidebar" id="sidebar" role="navigation" aria-label="Main navigation">
+        <div class="sidebar-header">
+            <h3><i class="bi bi-geo-alt-fill me-2"></i>ArtisanHub</h3>
+        </div>
+        <div class="sidebar-nav">
+            <div class="nav-category">Main</div>
+            <a class="nav-item active" data-section="dashboard" role="button" tabindex="0">
+                <i class="bi bi-speedometer2"></i>
+                <span>Dashboard</span>
+                <span class="nav-badge">NEW</span>
+            </a>
+            
+            <div class="nav-category">Intelligence</div>
+            <a class="nav-item" data-section="analysis" role="button" tabindex="0">
+                <i class="bi bi-cpu"></i>
+                <span>AI Analysis</span>
+            </a>
+            <a class="nav-item" data-section="growth-opportunities" role="button" tabindex="0">
+                <i class="bi bi-graph-up-arrow"></i>
+                <span>Growth Opportunities</span>
+            </a>
+            <a class="nav-item" data-section="growth-strategies" role="button" tabindex="0">
+                <i class="bi bi-lightbulb"></i>
+                <span>Growth Strategies</span>
+            </a>
+            
+            <div class="nav-category">Resources</div>
+            <a class="nav-item" data-section="material-sourcing" role="button" tabindex="0">
+                <i class="bi bi-box-seam"></i>
+                <span>Material Sourcing</span>
+            </a>
+            <a class="nav-item" data-section="map-view" role="button" tabindex="0">
+                <i class="bi bi-map"></i>
+                <span>Map View</span>
+            </a>
+            
+            <div class="nav-category">System</div>
+            <a class="nav-item" data-section="ai-status" role="button" tabindex="0">
+                <i class="bi bi-activity"></i>
+                <span>AI Status</span>
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="main-content" id="mainContent" role="main">
+        <!-- Professional Header -->
+        <header class="professional-header" data-aos="fade-down">
+            <div class="container-fluid">
+                <div class="row align-items-center">
+                    <div class="col-lg-8">
+                        <h1 class="brand-title">ArtisanHub Intelligence</h1>
+                        <p class="brand-subtitle">AI-Powered Platform for Indian Artisans</p>
+                    </div>
+                    <div class="col-lg-4 text-end">
+                        <div class="d-flex align-items-center justify-content-end">
+                            <span class="badge bg-success me-2 px-3 py-2" style="font-size: 0.9rem;">
+                                <i class="bi bi-circle-fill me-1"></i>SYSTEM ONLINE
+                            </span>
+                            <button class="btn btn-sm professional-btn" onclick="location.reload()">
+                                <i class="bi bi-arrow-clockwise"></i> Refresh
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Section -->
+        <section class="content-section active" id="dashboard">
+            <div class="container-fluid">
+                <!-- Status Overview -->
+                <div class="row mb-4" data-aos="fade-up" data-aos-delay="100">
+                    <div class="col-xl-3 col-lg-6 col-md-6 mb-4">
+                        <div class="status-card">
+                            <div class="status-number" data-counter="8">0</div>
+                            <div class="status-label">AI Models Active</div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-lg-6 col-md-6 mb-4">
+                        <div class="status-card">
+                            <div class="status-number" data-counter="25">0</div>
+                            <div class="status-label">Indian Markets</div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-lg-6 col-md-6 mb-4">
+                        <div class="status-card">
+                            <div class="status-number" data-counter="5">0</div>
+                            <div class="status-label">Artisan Types</div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-lg-6 col-md-6 mb-4">
+                        <div class="status-card">
+                            <div class="status-number" data-counter="1000">0</div>
+                            <div class="status-label">Active Artisans</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Start Card -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="professional-card" data-aos="fade-up" data-aos-delay="200">
+                            <h2 class="card-title">
+                                <i class="bi bi-stars"></i>
+                                Quick Start Analysis
+                            </h2>
+                            <p class="lead mb-4">Tell us about your craft and get instant AI-powered insights, market opportunities, and growth strategies tailored specifically for your business.</p>
+                            
+                            <div class="row">
+                                <div class="col-lg-8 mb-3">
+                                    <label for="quickDescription" class="form-label fw-semibold">Describe Your Craft</label>
+                                    <textarea 
+                                        id="quickDescription" 
+                                        class="form-control professional-input professional-textarea" 
+                                        rows="4"
+                                        placeholder="Provide detailed description of your craft, experience, materials used, and current business activities...&#10;&#10;Example: I make traditional terracotta pots in Jaipur using local clay and have 15 years of experience. I specialize in hand-painted designs and sell at local markets."
+                                        aria-label="Craft description"
+                                    ></textarea>
+                                </div>
+                                <div class="col-lg-4 mb-3">
+                                    <label for="quickLocation" class="form-label fw-semibold">Your Location</label>
+                                    <input 
+                                        type="text" 
+                                        id="quickLocation" 
+                                        class="form-control professional-input" 
+                                        placeholder="e.g., Jaipur, Delhi"
+                                        aria-label="Location"
+                                    >
+                                </div>
+                            </div>
+                            
+                            <div class="text-center mt-4">
+                                <button onclick="quickAnalyze()" class="professional-btn btn-lg" aria-label="Analyze craft with AI">
+                                    <i class="bi bi-search me-2"></i>Analyze with AI
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Featured Opportunities -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="professional-card" data-aos="fade-up" data-aos-delay="300">
+                            <h2 class="card-title">
+                                <i class="bi bi-fire"></i>
+                                Featured Opportunities
+                            </h2>
+                            
+                            <!-- Swiper Carousel -->
+                            <div class="swiper opportunitySwiper">
+                                <div class="swiper-wrapper">
+                                    <div class="swiper-slide">
+                                        <h4>Delhi Haat</h4>
+                                        <p>Premium craft market with 10,000+ daily visitors</p>
+                                        <span class="badge bg-info">Delhi</span>
+                                    </div>
+                                    <div class="swiper-slide">
+                                        <h4>Surajkund Mela</h4>
+                                        <p>International crafts fair with global reach</p>
+                                        <span class="badge bg-warning">Faridabad</span>
+                                    </div>
+                                    <div class="swiper-slide">
+                                        <h4>Dilli Haat</h4>
+                                        <p>Government-supported artisan marketplace</p>
+                                        <span class="badge bg-success">Delhi</span>
+                                    </div>
+                                    <div class="swiper-slide">
+                                        <h4>Janpath Market</h4>
+                                        <p>Tourist-focused craft market</p>
+                                        <span class="badge bg-primary">Delhi</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="swiper-pagination"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- AI Analysis Section -->
+        <section class="content-section" id="analysis">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="professional-card" data-aos="fade-up">
+                            <h2 class="card-title">
+                                <i class="bi bi-robot"></i>
+                                AI Craft Analysis
+                            </h2>
+                            <div id="aiAnalysisResults">
+                                <div class="text-center py-5">
+                                    <i class="bi bi-cpu display-1 text-primary mb-3" style="font-size: 4rem;"></i>
+                                    <h4>Ready for Analysis</h4>
+                                    <p class="text-secondary">Complete the Quick Start form to receive detailed AI insights about your craft.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Growth Opportunities Section -->
+        <section class="content-section" id="growth-opportunities">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="professional-card" data-aos="fade-up">
+                            <h2 class="card-title">
+                                <i class="bi bi-graph-up-arrow"></i>
+                                Exhibition & Market Opportunities
+                            </h2>
+                            <div id="opportunitiesList">
+                                <div class="text-center py-5">
+                                    <i class="bi bi-calendar-event display-1 text-primary mb-3" style="font-size: 4rem;"></i>
+                                    <h4>Discover Opportunities</h4>
+                                    <p class="text-secondary">Analyze your craft to discover personalized exhibition and market opportunities across India.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Growth Strategies Section -->
+        <section class="content-section" id="growth-strategies">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="professional-card" data-aos="fade-up">
+                            <h2 class="card-title">
+                                <i class="bi bi-lightbulb"></i>
+                                Growth Strategies
+                            </h2>
+                            <div id="growthStrategiesList">
+                                <div class="text-center py-5">
+                                    <i class="bi bi-rocket-takeoff display-1 text-primary mb-3" style="font-size: 4rem;"></i>
+                                    <h4>Business Growth Plans</h4>
+                                    <p class="text-secondary">Get customized growth strategies with ROI calculations after AI analysis.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Material Sourcing Section -->
+        <section class="content-section" id="material-sourcing">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="professional-card" data-aos="fade-up">
+                            <h2 class="card-title">
+                                <i class="bi bi-box-seam"></i>
+                                Material & Tool Sourcing
+                            </h2>
+                            <div id="materialSourcingList">
+                                <div class="text-center py-5">
+                                    <i class="bi bi-truck display-1 text-primary mb-3" style="font-size: 4rem;"></i>
+                                    <h4>Supplier Network</h4>
+                                    <p class="text-secondary">Discover verified suppliers for your craft materials and tools across India.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Map View Section -->
+        <section class="content-section" id="map-view">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="professional-card" data-aos="fade-up">
+                            <h2 class="card-title">
+                                <i class="bi bi-map"></i>
+                                Location & Markets Map
+                            </h2>
+                            <div id="map-container"></div>
+                            
+                            <!-- Map Controls -->
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <label for="mapSearch" class="form-label">Search Location</label>
+                                    <input type="text" id="mapSearch" class="form-control professional-input" placeholder="Search for cities, markets...">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="mapFilter" class="form-label">Filter by Type</label>
+                                    <select id="mapFilter" class="form-select professional-input">
+                                        <option value="all">All Markets</option>
+                                        <option value="exhibition">Exhibitions</option>
+                                        <option value="craft_fair">Craft Fairs</option>
+                                        <option value="supplier">Suppliers</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- AI Status Section -->
+        <section class="content-section" id="ai-status">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="professional-card" data-aos="fade-up">
+                            <h2 class="card-title">
+                                <i class="bi bi-activity"></i>
+                                AI System Status
+                            </h2>
+                            <div id="aiStatusDetails">
+                                <div class="text-center py-5">
+                                    <div class="ai-spinner mb-3"></div>
+                                    <h4>Checking AI Models</h4>
+                                    <p class="text-secondary">Connecting to Ollama AI engine...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- AOS Animation Library -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <!-- Swiper JS -->
+    <script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
+    
+    <script>
+        // Global Variables
+        let map = null;
+        let currentAnalysis = null;
+        let sidebarOpen = false;
+        
+        // Initialize Application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
+        
+        function initializeApp() {
+            console.log('🚀 Initializing ArtisanHub Professional Platform...');
+            
+            // Initialize AOS
+            AOS.init({
+                duration: 800,
+                once: false,
+                offset: 100
+            });
+            
+            // Initialize Sidebar
+            initializeSidebar();
+            
+            // Initialize Swiper
+            initializeSwiper();
+            
+            // Initialize Map
+            setTimeout(() => initializeMap(), 1000);
+            
+            // Load Initial Data
+            loadInitialData();
+            
+            // Initialize Counters
+            initializeCounters();
+            
+            // Add Keyboard Navigation
+            initializeKeyboardNavigation();
+            
+            // Initialize Search Functionality
+            initializeSearch();
+            
+            console.log('✅ ArtisanHub Platform Initialized Successfully');
+        }
+        
+        function initializeSidebar() {
+            const hamburger = document.getElementById('hamburgerBtn');
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            const navItems = document.querySelectorAll('.nav-item');
+            
+            hamburger.addEventListener('click', function(e) {
+                e.preventDefault();
+                toggleSidebar();
+            });
+            
+            navItems.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    handleNavigation(this);
+                });
+                
+                item.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleNavigation(this);
+                    }
+                });
+            });
+        }
+        
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const hamburger = document.getElementById('hamburgerBtn');
+            const mainContent = document.getElementById('mainContent');
+            
+            sidebarOpen = !sidebarOpen;
+            
+            if (sidebarOpen) {
+                sidebar.classList.add('active');
+                hamburger.classList.add('active');
+                mainContent.classList.add('shifted');
+                hamburger.setAttribute('aria-expanded', 'true');
+            } else {
+                sidebar.classList.remove('active');
+                hamburger.classList.remove('active');
+                mainContent.classList.remove('shifted');
+                hamburger.setAttribute('aria-expanded', 'false');
+            }
+        }
+        
+        function handleNavigation(navItem) {
+            // Remove active class from all items and sections
+            document.querySelectorAll('.nav-item').forEach(nav => {
+                nav.classList.remove('active');
+                nav.setAttribute('aria-current', 'false');
+            });
+            
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Add active class to clicked item and corresponding section
+            navItem.classList.add('active');
+            navItem.setAttribute('aria-current', 'true');
+            
+            const sectionId = navItem.getAttribute('data-section');
+            document.getElementById(sectionId).classList.add('active');
+            
+            // Load section-specific data
+            loadSectionData(sectionId);
+            
+            // Close sidebar on mobile
+            if (window.innerWidth <= 768) {
+                toggleSidebar();
+            }
+        }
+        
+        function initializeSwiper() {
+            new Swiper('.opportunitySwiper', {
+                slidesPerView: 1,
+                spaceBetween: 30,
+                loop: true,
+                autoplay: {
+                    delay: 5000,
+                    disableOnInteraction: false,
+                },
+                pagination: {
+                    el: '.swiper-pagination',
+                    clickable: true,
+                },
+                breakpoints: {
+                    640: {
+                        slidesPerView: 1,
+                    },
+                    768: {
+                        slidesPerView: 2,
+                    },
+                    1024: {
+                        slidesPerView: 3,
+                    },
+                    1200: {
+                        slidesPerView: 4,
+                    }
+                }
+            });
+        }
+        
+        function initializeMap() {
+            const mapContainer = document.getElementById('map-container');
+            if (!mapContainer) return;
+            
+            // Create map
+            map = L.map('map-container').setView([20.5937, 78.9629], 5);
+            
+            // Add tile layer with custom styling
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+            
+            // Add major Indian cities with enhanced markers
+            const cities = [
+                {name: 'Delhi', lat: 28.6139, lng: 77.2090, type: 'capital', artisans: 'all'},
+                {name: 'Mumbai', lat: 19.0760, lng: 72.8777, type: 'major', artisans: 'all'},
+                {name: 'Jaipur', lat: 26.9124, lng: 75.7873, type: 'craft', artisans: ['potter', 'textile']},
+                {name: 'Bangalore', lat: 12.9716, lng: 77.5946, type: 'tech', artisans: ['jeweler', 'metal_worker']},
+                {name: 'Chennai', lat: 13.0827, lng: 80.2707, type: 'major', artisans: 'all'},
+                {name: 'Kolkata', lat: 22.5726, lng: 88.3639, type: 'cultural', artisans: ['textile', 'metal_worker']},
+                {name: 'Agra', lat: 27.1767, lng: 78.0081, type: 'tourist', artisans: ['potter', 'carpenter']},
+                {name: 'Varanasi', lat: 25.3176, lng: 82.9739, type: 'cultural', artisans: ['textile', 'metal_worker']},
+                {name: 'Udaipur', lat: 24.5854, lng: 73.7125, type: 'craft', artisans: ['potter', 'painter']}
+            ];
+            
+            cities.forEach((city, index) => {
+                const icon = L.divIcon({
+                    html: `<div style="background: var(--primary-gradient); color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px;">${index + 1}</div>`,
+                    className: 'custom-div-icon',
+                    iconSize: [30, 30]
+                });
+                
+                const marker = L.marker([city.lat, city.lng], { icon: icon })
+                    .addTo(map)
+                    .bindPopup(`
+                        <div style="padding: 10px;">
+                            <h4 style="margin: 0 0 10px 0; color: var(--accent-orange);">${city.name}</h4>
+                            <p><strong>Type:</strong> ${city.type}</p>
+                            <p><strong>Best for:</strong> ${city.artisans.join(', ')}</p>
+                            <button onclick="focusOnCity(${city.lat}, ${city.lng})" style="background: var(--primary-gradient); border: none; color: white; padding: 5px 10px; border-radius: 5px; cursor: pointer;">Focus</button>
+                        </div>
+                    `);
+                
+                // Add popup animation
+                marker.on('popupopen', function() {
+                    this._icon.style.transform = 'scale(1.2)';
+                });
+                
+                marker.on('popupclose', function() {
+                    this._icon.style.transform = 'scale(1)';
+                });
+            });
+        }
+        
+        function focusOnCity(lat, lng) {
+            if (map) {
+                map.setView([lat, lng], 12, {
+                    animate: true,
+                    duration: 2
+                });
+            }
+        }
+        
+        function loadInitialData() {
+            // Load AI Status
+            loadAIStatus();
+            
+            // Load sample opportunities
+            setTimeout(() => {
+                loadSampleOpportunities();
+            }, 2000);
+        }
+        
+        function loadAIStatus() {
+            fetch('/api/ollama-status')
+                .then(response => response.json())
+                .then(data => {
+                    const statusDiv = document.getElementById('aiStatusDetails');
+                    
+                    if (data.success) {
+                        statusDiv.innerHTML = `
+                            <div class="alert alert-success-custom alert-custom">
+                                <h4 class="mb-3"><i class="bi bi-check-circle-fill me-2"></i>AI Systems Online</h4>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h5>Connected Models</h5>
+                                        <div class="d-flex flex-wrap gap-2 mt-2">
+                                            ${data.models.slice(0, 6).map(model => 
+                                                `<span class="badge bg-primary">${model.name}</span>`
+                                            ).join('')}
+                                            ${data.models.length > 6 ? `<span class="badge bg-secondary">+${data.models.length - 6} more</span>` : ''}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h5>System Status</h5>
+                                        <div class="mt-2">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="bi bi-circle-fill text-success me-2"></i>
+                                                <span>Ollama Engine: Active</span>
+                                            </div>
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="bi bi-circle-fill text-success me-2"></i>
+                                                <span>API Gateway: Operational</span>
+                                            </div>
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-circle-fill text-success me-2"></i>
+                                                <span>Map Service: Ready</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        statusDiv.innerHTML = `
+                            <div class="alert alert-danger-custom alert-custom">
+                                <h4 class="mb-3"><i class="bi bi-exclamation-triangle-fill me-2"></i>AI Connection Failed</h4>
+                                <p><strong>Error:</strong> ${data.error}</p>
+                                <p class="mb-0">Please check if Ollama is running on port 11434</p>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading AI status:', error);
+                    document.getElementById('aiStatusDetails').innerHTML = `
+                        <div class="alert alert-warning-custom alert-custom">
+                            <h4><i class="bi bi-exclamation-triangle me-2"></i>Connection Error</h4>
+                            <p>Unable to connect to AI systems. Please try refreshing the page.</p>
+                        </div>
+                    `;
+                });
+        }
+        
+        function loadSampleOpportunities() {
+            const opportunities = [
+                {
+                    name: 'Delhi Haat - Premium Week',
+                    location: 'Delhi',
+                    dates: 'Every Weekend',
+                    visitors: '5000-8000',
+                    fee: '₹1500-3000',
+                    sales: '₹25,000-75,000',
+                    type: 'craft_fair'
+                },
+                {
+                    name: 'Surajkund International Crafts Mela',
+                    location: 'Faridabad',
+                    dates: 'Feb 1-15, 2024',
+                    visitors: '200,000+',
+                    fee: '₹10,000-25,000',
+                    sales: '₹200,000-500,000',
+                    type: 'exhibition'
+                },
+                {
+                    name: 'Dilli Haat - Tourist Special',
+                    location: 'Delhi',
+                    dates: 'Daily',
+                    visitors: '3000-6000',
+                    fee: '₹800-1500',
+                    sales: '₹15,000-40,000',
+                    type: 'market'
+                }
+            ];
+            
+            const oppList = document.getElementById('opportunitiesList');
+            if (oppList && opportunities.length > 0) {
+                oppList.innerHTML = `
+                    <div class="row">
+                        ${opportunities.map((opp, index) => `
+                            <div class="col-lg-4 col-md-6 mb-4">
+                                <div class="opportunity-card" data-aos="fade-up" data-aos-delay="${index * 100}">
+                                    <h4 class="opportunity-title">${opp.name}</h4>
+                                    <div class="opportunity-details">
+                                        <p class="mb-2"><i class="bi bi-geo-alt-fill text-primary me-2"></i><strong>Location:</strong> ${opp.location}</p>
+                                        <p class="mb-2"><i class="bi bi-calendar-event text-primary me-2"></i><strong>Dates:</strong> ${opp.dates}</p>
+                                        <p class="mb-2"><i class="bi bi-people-fill text-primary me-2"></i><strong>Visitors:</strong> ${opp.visitors}</p>
+                                        <p class="mb-3"><i class="bi bi-currency-rupee text-primary me-2"></i><strong>Fee:</strong> ${opp.fee}</p>
+                                    </div>
+                                    <div class="price-tag">Potential Sales: ${opp.sales}</div>
+                                    <span class="badge bg-info mt-2">${opp.type.replace('_', ' ').toUpperCase()}</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+        }
+        
+        function initializeCounters() {
+            const counters = document.querySelectorAll('[data-counter]');
+            
+            const observerOptions = {
+                threshold: 0.5
+            };
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const counter = entry.target;
+                        const target = parseInt(counter.getAttribute('data-counter'));
+                        animateCounter(counter, 0, target, 2000);
+                        observer.unobserve(counter);
+                    }
+                });
+            }, observerOptions);
+            
+            counters.forEach(counter => {
+                observer.observe(counter);
+            });
+        }
+        
+        function animateCounter(element, start, end, duration) {
+            const range = end - start;
+            const increment = end > start ? 1 : -1;
+            const stepTime = Math.abs(Math.floor(duration / range));
+            let current = start;
+            
+            const timer = setInterval(() => {
+                current += increment;
+                element.textContent = current >= 1000 ? `${(current/1000).toFixed(1)}K+` : current;
+                
+                if (current === end) {
+                    clearInterval(timer);
+                }
+            }, stepTime);
+        }
+        
+        function initializeKeyboardNavigation() {
+            document.addEventListener('keydown', function(e) {
+                // ESC to close sidebar
+                if (e.key === 'Escape' && sidebarOpen) {
+                    toggleSidebar();
+                }
+                
+                // Ctrl+K for quick search
+                if (e.ctrlKey && e.key === 'k') {
+                    e.preventDefault();
+                    document.getElementById('quickDescription')?.focus();
+                }
+                
+                // Ctrl+/ for keyboard shortcuts
+                if (e.ctrlKey && e.key === '/') {
+                    e.preventDefault();
+                    showKeyboardShortcuts();
+                }
+            });
+        }
+        
+        function initializeSearch() {
+            const mapSearch = document.getElementById('mapSearch');
+            if (mapSearch) {
+                mapSearch.addEventListener('input', function(e) {
+                    const query = e.target.value.toLowerCase();
+                    searchMapLocations(query);
+                });
+            }
+        }
+        
+        function searchMapLocations(query) {
+            if (!map || !query) return;
+            
+            // Clear existing search markers
+            // Implementation for search functionality
+            console.log('Searching for:', query);
+        }
+        
+        async function quickAnalyze() {
+            const description = document.getElementById('quickDescription').value.trim();
+            const location = document.getElementById('quickLocation').value.trim();
+            
+            if (!description || description.length < 20) {
+                showNotification('Please provide a detailed description of your craft (at least 20 characters)', 'warning');
+                return;
+            }
+            
+            showLoading();
+            updateLoadingProgress(0, 'Initializing AI analysis...');
+            
+            try {
+                // Step 1: Analyzing craft type
+                updateLoadingProgress(25, 'Analyzing craft type and expertise...');
+                await sleep(800);
+                
+                // Step 2: Querying AI models
+                updateLoadingProgress(50, 'Connecting to Llama3.1 AI model...');
+                await sleep(800);
+                
+                // Step 3: Generating insights
+                updateLoadingProgress(75, 'Generating growth strategies and market opportunities...');
+                await sleep(800);
+                
+                // Step 4: Finalizing analysis
+                updateLoadingProgress(90, 'Finalizing comprehensive analysis...');
+                await sleep(500);
+                
+                const response = await fetch('/api/analyze-artisan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ description, location })
+                });
+                
+                updateLoadingProgress(95, 'Processing results...');
+                
+                const data = await response.json();
+                updateLoadingProgress(100, 'Analysis complete!');
+                
+                if (data.success) {
+                    currentAnalysis = data;
+                    updateAllSections(data);
+                    
+                    // Switch to AI Analysis section
+                    setTimeout(() => {
+                        handleNavigation(document.querySelector('[data-section="analysis"]'));
+                        showNotification('✨ Analysis completed successfully! Check your AI insights.', 'success');
+                    }, 1000);
+                } else {
+                    showNotification('❌ Analysis failed: ' + data.error, 'danger');
+                }
+            } catch (error) {
+                console.error('Error analyzing artisan:', error);
+                showNotification('🔥 Network error. Please check your connection and try again.', 'danger');
+            } finally {
+                setTimeout(hideLoading, 2000);
+            }
+        }
+        
+        function updateAllSections(data) {
+            // Update AI Analysis Section
+            if (data.ai_analysis) {
+                updateAIAnalysis(data.ai_analysis, data.growth_potential);
+            }
+            
+            // Update Growth Opportunities Section
+            if (data.opportunities && data.opportunities.length > 0) {
+                updateOpportunities(data.opportunities);
+            }
+            
+            // Update Growth Strategies Section
+            if (data.growth_potential && data.growth_potential.growth_strategies) {
+                updateGrowthStrategies(data.growth_potential.growth_strategies);
+            }
+            
+            // Update Material Sourcing Section
+            if (data.ai_analysis && data.ai_analysis.artisan_type) {
+                updateMaterialSourcing(data.ai_analysis.artisan_type);
+            }
+            
+            // Update Map with user location
+            if (map && data.coordinates) {
+                addUserLocationToMap(data.coordinates);
+            }
+        }
+        
+        function updateAIAnalysis(analysis, growth) {
+            const analysisDiv = document.getElementById('aiAnalysisResults');
+            
+            analysisDiv.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6 mb-4" data-aos="fade-right">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title text-primary"><i class="bi bi-person-badge me-2"></i>Artisan Profile</h5>
+                                <div class="mb-3">
+                                    <span class="badge bg-info text-uppercase fs-6">${analysis.artisan_type.replace('_', ' ')}</span>
+                                    <span class="badge bg-warning ms-2 text-uppercase fs-6">${analysis.skill_level}</span>
+                                </div>
+                                <p><strong>Specialization:</strong> ${analysis.specialization}</p>
+                                <p><strong>Target Market:</strong> ${analysis.target_market}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-4" data-aos="fade-left">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title text-success"><i class="bi bi-graph-up me-2"></i>Business Metrics</h5>
+                                <div class="mb-3">
+                                    <span class="badge bg-success text-uppercase fs-6">${analysis.business_potential}</span>
+                                </div>
+                                <p><strong>Monthly Income:</strong> <span class="text-success fw-bold">${growth.current_revenue_potential}</span></p>
+                                <p><strong>Competitive Advantage:</strong> ${growth.competitive_advantage || 'Traditional craftsmanship'}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12" data-aos="fade-up">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title text-info"><i class="bi bi-list-check me-2"></i>Recommended Actions</h5>
+                                <div class="row">
+                                    ${analysis.recommended_actions.map((action, index) => `
+                                        <div class="col-md-4 mb-2">
+                                            <div class="d-flex align-items-center">
+                                                <span class="badge bg-primary me-2">${index + 1}</span>
+                                                <span>${action}</span>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function updateOpportunities(opportunities) {
+            const oppDiv = document.getElementById('opportunitiesList');
+            
+            oppDiv.innerHTML = `
+                <div class="row">
+                    ${opportunities.map((opp, index) => `
+                        <div class="col-lg-6 col-xl-4 mb-4">
+                            <div class="opportunity-card" data-aos="fade-up" data-aos-delay="${index * 100}">
+                                <h4 class="opportunity-title">${opp.name}</h4>
+                                <div class="opportunity-details">
+                                    <p class="mb-2"><i class="bi bi-geo-alt-fill text-primary me-2"></i><strong>Location:</strong> ${opp.location}</p>
+                                    <p class="mb-2"><i class="bi bi-calendar-event text-primary me-2"></i><strong>Dates:</strong> ${opp.dates}</p>
+                                    <p class="mb-2"><i class="bi bi-people-fill text-primary me-2"></i><strong>Expected Visitors:</strong> ${opp.expected_visitors}</p>
+                                    <p class="mb-3"><i class="bi bi-currency-rupee text-primary me-2"></i><strong>Participation Fee:</strong> ${opp.participation_fee}</p>
+                                </div>
+                                <div class="price-tag">Potential Sales: ${opp.potential_sales}</div>
+                                <div class="mt-3">
+                                    <button class="btn btn-sm professional-btn" onclick="showOpportunityDetails(${index})">
+                                        <i class="bi bi-info-circle me-1"></i>View Details
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+        
+        function updateGrowthStrategies(strategies) {
+            const stratDiv = document.getElementById('growthStrategiesList');
+            
+            stratDiv.innerHTML = `
+                <div class="row">
+                    ${strategies.map((strategy, index) => `
+                        <div class="col-lg-6 mb-4">
+                            <div class="opportunity-card" data-aos="fade-up" data-aos-delay="${index * 100}">
+                                <h4 class="opportunity-title">${strategy.strategy}</h4>
+                                <div class="opportunity-details">
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <p><i class="bi bi-cash-stack text-primary me-2"></i><strong>Investment:</strong> ${strategy.investment_required}</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p><i class="bi bi-graph-up-arrow text-primary me-2"></i><strong>Expected Return:</strong> ${strategy.expected_return}</p>
+                                        </div>
+                                    </div>
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <p><i class="bi bi-clock text-primary me-2"></i><strong>Time to Implement:</strong> ${strategy.time_to_implement}</p>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <p><i class="bi bi-speedometer2 text-primary me-2"></i><strong>Difficulty:</strong> 
+                                                <span class="badge bg-${strategy.difficulty === 'easy' ? 'success' : strategy.difficulty === 'medium' ? 'warning' : 'danger'}">${strategy.difficulty.toUpperCase()}</span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="price-tag">ROI Timeline: ${calculateROI(strategy.investment_required, strategy.expected_return, strategy.time_to_implement)}</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+        
+        function updateMaterialSourcing(artisanType) {
+            const materialDiv = document.getElementById('materialSourcingList');
+            const materials = getMaterialList(artisanType);
+            
+            materialDiv.innerHTML = `
+                <div class="row">
+                    ${materials.map((material, index) => `
+                        <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="opportunity-card" data-aos="fade-up" data-aos-delay="${index * 100}">
+                                <h4 class="opportunity-title">${material.name}</h4>
+                                <div class="opportunity-details">
+                                    <p class="mb-2">${material.description}</p>
+                                    <p class="mb-2"><i class="bi bi-building text-primary me-2"></i><strong>Suppliers:</strong> ${material.suppliers}</p>
+                                    <p class="mb-2"><i class="bi bi-currency-rupee text-primary me-2"></i><strong>Price Range:</strong> ${material.price_range}</p>
+                                    <p class="mb-3"><i class="bi bi-geo-alt text-primary me-2"></i><strong>Available in:</strong> ${material.location}</p>
+                                </div>
+                                <div class="price-tag">Quality Grade: ${material.quality || 'Premium'}</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+        
+        function getMaterialList(artisanType) {
+            const materialData = {
+                'potter': [
+                    {
+                        name: 'Premium Terracotta Clay',
+                        description: 'High-quality traditional clay perfect for pottery making',
+                        suppliers: 'Jaipur Clay Co, Rajasthan Pottery Supply',
+                        price_range: '₹500-2,000/ton',
+                        location: 'Jaipur, Delhi',
+                        quality: 'Food Grade'
+                    },
+                    {
+                        name: 'Professional Pottery Glazes',
+                        description: 'Traditional and modern glazing materials for all pottery types',
+                        suppliers: 'Ceramic Supply India, Glaze Masters',
+                        price_range: '₹200-800/kg',
+                        location: 'Delhi, Mumbai',
+                        quality: 'Lead-Free'
+                    },
+                    {
+                        name: 'Electric Pottery Kilns',
+                        description: 'Energy-efficient kilns with digital temperature control',
+                        suppliers: 'Kiln Manufacturers India, pottery Equipment Co',
+                        price_range: '₹15,000-50,000',
+                        location: 'Mumbai, Bangalore',
+                        quality: 'Industrial Grade'
+                    }
+                ],
+                'carpenter': [
+                    {
+                        name: 'Seasoned Teak Wood',
+                        description: 'Premium hardwood for high-end furniture making',
+                        suppliers: 'Timber Merchants Bangalore, Wood Supply India',
+                        price_range: '₹800-3,000/cubic ft',
+                        location: 'Bangalore, Kerala',
+                        quality: 'A-Grade'
+                    },
+                    {
+                        name: 'Professional Power Tools',
+                        description: 'Industrial-grade woodworking tools and equipment',
+                        suppliers: 'Tool Suppliers Delhi, Hardware World',
+                        price_range: '₹5,000-25,000',
+                        location: 'Delhi, Mumbai',
+                        quality: 'Professional'
+                    },
+                    {
+                        name: 'Wood Finishes & Polishes',
+                        description: 'Premium varnishes, stains, and polishing compounds',
+                        suppliers: 'Hardware Stores, Paint Suppliers',
+                        price_range: '₹200-1,500',
+                        location: 'Available Nationwide',
+                        quality: 'Non-Toxic'
+                    }
+                ],
+                'textile_artist': [
+                    {
+                        name: 'Handloom Cotton Fabric',
+                        description: 'Traditional handloom fabrics for textile artists',
+                        suppliers: 'Fabric Wholesalers Surat, Cotton Emporium',
+                        price_range: '₹100-500/meter',
+                        location: 'Surat, Jaipur',
+                        quality: 'Handloom Grade'
+                    },
+                    {
+                        name: 'Natural Textile Dyes',
+                        description: 'Eco-friendly traditional and modern dyeing materials',
+                        suppliers: 'Dye Manufacturers Jaipur, Natural Colors Co',
+                        price_range: '₹50-300/kg',
+                        location: 'Jaipur, Delhi',
+                        quality: 'AZO-Free'
+                    },
+                    {
+                        name: 'Embroidery Thread & Materials',
+                        description: 'Premium threads and embroidery supplies',
+                        suppliers: 'Thread Suppliers Delhi, Craft Materials',
+                        price_range: '₹20-200/bundle',
+                        location: 'Delhi, Kolkata',
+                        quality: 'Colorfast'
+                    }
+                ],
+                'jeweler': [
+                    {
+                        name: '92.5 Sterling Silver',
+                        description: 'Hallmarked sterling silver for jewelry making',
+                        suppliers: 'Precious Metals Dealers Mumbai, Silver Bullion India',
+                        price_range: '₹60,000-70,000/kg',
+                        location: 'Mumbai, Jaipur',
+                        quality: 'Hallmarked'
+                    },
+                    {
+                        name: 'Gemstones & Semi-Precious Stones',
+                        description: 'Wide variety of gemstones for jewelry designs',
+                        suppliers: 'Gem Dealers Jaipur, Stone Market Delhi',
+                        price_range: '₹500-50,000/carats',
+                        location: 'Jaipur, Delhi',
+                        quality: 'Certified'
+                    },
+                    {
+                        name: 'Jewelry Making Tools',
+                        description: 'Professional tools for fine jewelry craftsmanship',
+                        suppliers: 'Tool Suppliers Delhi, Jewelry Equipment',
+                        price_range: '₹2,000-15,000',
+                        location: 'Delhi, Mumbai',
+                        quality: 'Swiss Made'
+                    }
+                ],
+                'metal_worker': [
+                    {
+                        name: 'Mild Steel Sheets',
+                        description: 'High-quality steel sheets for metal fabrication',
+                        suppliers: 'Steel Suppliers Industrial Areas, Metal Traders',
+                        price_range: '₹40-80/kg',
+                        location: 'Industrial Areas, Major Cities',
+                        quality: 'ISI Certified'
+                    },
+                    {
+                        name: 'Professional Welding Equipment',
+                        description: 'Industrial welding machines and consumables',
+                        suppliers: 'Welding Supply Co, Industrial Equipment',
+                        price_range: '₹8,000-30,000',
+                        location: 'Industrial Areas, Major Cities',
+                        quality: 'Industrial Grade'
+                    },
+                    {
+                        name: 'Metalworking Power Tools',
+                        description: 'Heavy-duty tools for metal working projects',
+                        suppliers: 'Industrial Suppliers, Tool Manufacturers',
+                        price_range: '₹10,000-50,000',
+                        location: 'Major Industrial Hubs',
+                        quality: 'Industrial'
+                    }
+                ]
+            };
+
+            return materialData[artisanType] || [
+                {
+                    name: 'General Craft Supplies',
+                    description: 'Basic materials and tools for various crafts',
+                    suppliers: 'Local Suppliers, Online Markets',
+                    price_range: 'Varies by item',
+                    location: 'Available Nationwide',
+                    quality: 'Standard'
+                }
+            ];
+        }
+        
+        function addUserLocationToMap(coordinates) {
+            if (map && coordinates) {
+                const userIcon = L.divIcon({
+                    html: `<div style="background: var(--success-gradient); color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 3px solid white; box-shadow: 0 0 20px rgba(76, 175, 80, 0.5);"><i class="bi bi-person-fill"></i></div>`,
+                    className: 'user-location-icon',
+                    iconSize: [40, 40]
+                });
+                
+                const userMarker = L.marker([coordinates.lat, coordinates.lng], { icon: userIcon })
+                    .addTo(map)
+                    .bindPopup('<strong>Your Location</strong><br>Base for market analysis')
+                    .openPopup();
+                
+                map.setView([coordinates.lat, coordinates.lng], 10, {
+                    animate: true,
+                    duration: 2
+                });
+            }
+        }
+        
+        function calculateROI(investment, returns, timeframe) {
+            // Simple ROI calculation
+            const investmentNum = parseInt(investment.replace(/[^\d]/g, ''));
+            const returnNum = parseInt(returns.replace(/[^\d]/g, ''));
+            const roi = ((returnNum - investmentNum) / investmentNum * 100).toFixed(1);
+            return `${roi}% ROI`;
+        }
+        
+        function showOpportunityDetails(index) {
+            // Show detailed modal for opportunity
+            console.log('Showing details for opportunity:', index);
+        }
+        
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+        
+        function updateLoadingProgress(percentage, message = 'Processing...') {
+            const progressBar = document.querySelector('.progress-bar-custom');
+            const loadingMessage = document.querySelector('.ai-thinking h3');
+            const statusMessage = document.querySelector('.ai-thinking p');
+            
+            if (progressBar) {
+                progressBar.style.width = percentage + '%';
+            }
+            
+            if (loadingMessage) {
+                loadingMessage.textContent = message;
+            }
+            
+            if (statusMessage) {
+                // Update status based on progress
+                if (percentage < 30) {
+                    statusMessage.textContent = '🔍 Analyzing craft details...';
+                } else if (percentage < 60) {
+                    statusMessage.textContent = '🧠 AI model processing...';
+                } else if (percentage < 85) {
+                    statusMessage.textContent = '📊 Generating insights...';
+                } else {
+                    statusMessage.textContent = '✨ Finalizing analysis...';
+                }
+            }
+        }
+        
+        function showNotification(message, type = 'info') {
+            // Create and show notification
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; box-shadow: var(--shadow-hard);';
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 5000);
+        }
+        
+        function showKeyboardShortcuts() {
+            const shortcuts = `
+                <div class="modal fade show d-block" style="display: block; background: rgba(0,0,0,0.8);">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Keyboard Shortcuts</h5>
+                                <button type="button" class="btn-close" onclick="this.closest('.modal').remove()">&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6>Navigation</h6>
+                                        <p><kbd>ESC</kbd> - Close sidebar</p>
+                                        <p><kbd>Ctrl</kbd> + <kbd>K</kbd> - Quick search</p>
+                                        <p><kbd>Ctrl</kbd> + <kbd>/</kbd> - Show shortcuts</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>Actions</h6>
+                                        <p><kbd>Enter</kbd> - Activate selected item</p>
+                                        <p><kbd>Tab</kbd> - Navigate sections</p>
+                                        <p><kbd>Space</kbd> - Toggle sidebar</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            const modal = document.createElement('div');
+            modal.innerHTML = shortcuts;
+            document.body.appendChild(modal);
+            
+            // Close on backdrop click
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+        }
+        
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+        
+        // Add responsive handling
+        window.addEventListener('resize', function() {
+            if (window.innerWidth > 768 && sidebarOpen) {
+                // Keep sidebar behavior consistent on desktop
+                document.getElementById('mainContent').classList.add('shifted');
+            }
+        });
+        
+        // Add error handling for fetch calls
+        window.addEventListener('unhandledrejection', function(event) {
+            console.error('Unhandled promise rejection:', event.reason);
+            showNotification('An unexpected error occurred. Please refresh the page.', 'danger');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArtisanHub Real Intelligence - Indian Artisan Platform</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- Leaflet CSS for Maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #FF6B35 0%, #F72585 100%);
+            --secondary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --dark-bg: #0f0f0f;
+            --card-bg: #1a1a1a;
+            --text-primary: #ffffff;
+            --text-secondary: #b8bcc8;
+            --accent-orange: #FF6B35;
+            --accent-purple: #F72585;
+            --border-color: #2d3561;
+            --indian-flag-orange: #FF9933;
+            --indian-flag-green: #138808;
+            --indian-flag-white: #FFFFFF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Indian Theme Header */
+        .indian-header {
+            background: linear-gradient(135deg, var(--indian-flag-orange) 0%, var(--indian-flag-green) 100%);
+            padding: 2rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .indian-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path fill="%23FF9933" d="M0,0 L50,0 L100,50 L50,100 L0,100 Z"/><path fill="%23138808" d="M50,0 L100,0 L100,100 L50,100 Z"/><path fill="%23FFFFFF" d="M50,0 L75,50 L50,100 Z"/></svg>') no-repeat center;
+            background-size: 100px 100px;
+            opacity: 0.1;
+        }
+
+        .brand-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--indian-flag-white);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .brand-subtitle {
+            color: var(--indian-flag-white);
+            opacity: 0.9;
+            font-weight: 300;
+        }
+
+        /* Hero Section */
+        .hero-section {
+            padding: 100px 0 50px;
+            background: var(--card-bg);
+            position: relative;
+        }
+
+        .artisan-input-container {
+            background: linear-gradient(135deg, rgba(255, 107, 53, 0.1), rgba(247, 37, 133, 0.1));
+            border: 2px solid var(--border-color);
+            border-radius: 20px;
+            padding: 3rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .artisan-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--border-color);
+            border-radius: 15px;
+            padding: 1.5rem;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            resize: vertical;
+            min-height: 120px;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .artisan-input:focus {
+            outline: none;
+            border-color: var(--accent-orange);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.2);
+        }
+
+        /* Results Cards */
+        .result-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .result-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-orange);
+            box-shadow: 0 15px 30px rgba(255, 107, 53, 0.2);
+        }
+
+        .result-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--accent-orange);
+        }
+
+        /* Map Container */
+        #map-container {
+            height: 400px;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 2rem;
+            border: 2px solid var(--border-color);
+        }
+
+        /* Income Display */
+        .income-display {
+            background: var(--success-gradient);
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            font-size: 2rem;
+            font-weight: 800;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* Opportunity Cards */
+        .opportunity-card {
+            background: linear-gradient(135deg, rgba(255, 107, 53, 0.1), rgba(247, 37, 133, 0.1));
+            border: 1px solid var(--border-color);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .opportunity-card:hover {
+            background: linear-gradient(135deg, rgba(255, 107, 53, 0.15), rgba(247, 37, 133, 0.15));
+            transform: translateX(5px);
+        }
+
+        .opportunity-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .opportunity-details {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .price-tag {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 0.5rem;
+        }
+
+        /* AI Status */
+        .ai-status {
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid #4CAF50;
+            border-radius: 15px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .model-badge {
+            background: var(--secondary-gradient);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 0.5rem;
+        }
+
+        /* Growth Strategy */
+        .strategy-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 4px solid var(--accent-orange);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .strategy-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            transform: translateX(3px);
+        }
+
+        .strategy-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .strategy-details {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .investment-amount {
+            background: rgba(255, 107, 53, 0.2);
+            color: var(--accent-orange);
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            display: inline-block;
+        }
+
+        /* Loading */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .ai-thinking {
+            text-align: center;
+            color: var(--text-primary);
+        }
+
+        .ai-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 107, 53, 0.2);
+            border-top: 4px solid var(--accent-orange);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-section {
+                padding: 60px 0 30px;
+            }
+            
+            .artisan-input-container {
+                padding: 2rem;
+            }
+            
+            #map-container {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="ai-thinking">
+            <div class="ai-spinner"></div>
+            <div>AI is analyzing your craft...</div>
+            <small style="color: var(--text-secondary); margin-top: 0.5rem;">Using Llama3.1 for intelligent analysis</small>
+        </div>
+    </div>
+
+    <!-- Indian Themed Header -->
+    <header class="indian-header">
+        <div class="container text-center">
+            <h1 class="brand-title animate__animated animate__fadeInDown">
+                <i class="bi bi-geo-alt"></i> ArtisanHub Real Intelligence
+            </h1>
+            <p class="brand-subtitle animate__animated animate__fadeInUp animate__delay-1s">
+                AI-Powered Platform for Indian Artisans • Maps • Markets • Growth
+            </p>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="artisan-input-container animate__animated animate__fadeIn">
+                        <h3 class="text-center mb-4">
+                            <i class="bi bi-cpu"></i> Tell us about your craft
+                        </h3>
+                        <textarea 
+                            id="artisanDescription" 
+                            class="artisan-input" 
+                            placeholder="Describe your work in detail...&#10;&#10;For example: 'I make traditional terracotta pots in Jaipur. I've been doing this for 15 years, using local clay and traditional firing techniques. I sell at local markets but want to expand to bigger exhibitions and online platforms.'"
+                        ></textarea>
+                        
+                        <div class="row mt-3">
+                            <div class="col-md-6 mb-3">
+                                <input 
+                                    type="text" 
+                                    id="artisanLocation" 
+                                    class="form-control artisan-input" 
+                                    placeholder="Your city/location (e.g., Jaipur, Delhi, Mumbai)"
+                                >
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <button onclick="analyzeArtisan()" class="btn btn-lg w-100" style="background: var(--primary-gradient); border: none; border-radius: 50px; padding: 1rem; font-weight: 600; color: white;">
+                                    <i class="bi bi-search"></i> Analyze with AI
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- AI Status Section -->
+    <section class="container mt-4" id="aiStatusSection" style="display: none;">
+        <div class="ai-status text-center">
+            <h4><i class="bi bi-cpu"></i> AI Model Status</h4>
+            <div id="modelStatus">Checking...</div>
+            <div id="availableModels" class="mt-2"></div>
+        </div>
+    </section>
+
+    <!-- Results Section -->
+    <section class="container py-5" id="resultsSection" style="display: none;">
+        <!-- AI Analysis Results -->
+        <div class="row mb-4">
+            <div class="col-lg-6">
+                <div class="result-card animate__animated animate__fadeInUp">
+                    <h4 class="result-title">
+                        <i class="bi bi-robot"></i> AI Analysis
+                    </h4>
+                    <div id="aiAnalysisResults">
+                        <!-- AI results will be populated here -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <div class="result-card animate__animated animate__fadeInUp animate__delay-1s">
+                    <h4 class="result-title">
+                        <i class="bi bi-currency-rupee"></i> Income Potential
+                    </h4>
+                    <div id="incomeAnalysis">
+                        <!-- Income analysis will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="result-card animate__animated animate__fadeInUp animate__delay-2s">
+                    <h4 class="result-title">
+                        <i class="bi bi-map"></i> Your Location & Markets
+                    </h4>
+                    <div id="map-container"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Opportunities Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="result-card animate__animated animate__fadeInUp animate__delay-3s">
+                    <h4 class="result-title">
+                        <i class="bi bi-calendar-event"></i> Exhibition & Market Opportunities
+                    </h4>
+                    <div id="opportunitiesList">
+                        <!-- Opportunities will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Growth Strategies Section -->
+        <div class="row">
+            <div class="col-12">
+                <div class="result-card animate__animated animate__fadeInUp animate__delay-4s">
+                    <h4 class="result-title">
+                        <i class="bi bi-graph-up-arrow"></i> Growth Strategies
+                    </h4>
+                    <div id="growthStrategies">
+                        <!-- Growth strategies will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        let map = null;
+        let currentAnalysis = null;
+        let markers = [];
+
+        // Initialize on page load
+        window.addEventListener('load', function() {
+            checkAIStatus();
+            loadExampleDescription();
+        });
+
+        function loadExampleDescription() {
+            const examples = [
+                "I make traditional terracotta pots in Jaipur. I've been doing this for 15 years, using local clay and traditional firing techniques. I sell at local markets but want to expand to bigger exhibitions and online platforms.",
+                "I'm a woodworker from Kerala specializing in traditional furniture. I use teak wood and joinery techniques passed down through generations. Currently selling locally but want to reach urban markets.",
+                "I create block printed textiles in Ahmedabad. I work with natural dyes and traditional motifs. I have a small workshop and want to expand to fashion boutiques and online sales.",
+                "I'm a metal sculptor from Mumbai creating contemporary art pieces. I use recycled metals and welding techniques. I've exhibited in local galleries but want to reach national exhibitions."
+            ];
+            
+            document.getElementById('artisanDescription').value = examples[Math.floor(Math.random() * examples.length)];
+        }
+
+        async function checkAIStatus() {
+            try {
+                const response = await fetch('/api/ollama-status');
+                const data = await response.json();
+                
+                const statusSection = document.getElementById('aiStatusSection');
+                const modelStatus = document.getElementById('modelStatus');
+                const availableModels = document.getElementById('availableModels');
+                
+                if (data.success) {
+                    statusSection.style.display = 'block';
+                    modelStatus.innerHTML = `<span class="badge bg-success">Connected</span> <strong>${data.total_models} Models Available</strong>`;
+                    
+                    const modelList = data.models.slice(0, 3).map(model => 
+                        `<span class="model-badge">${model.name}</span>`
+                    ).join('');
+                    availableModels.innerHTML = modelList;
+                } else {
+                    modelStatus.innerHTML = `<span class="badge bg-danger">Disconnected</span> ${data.error}`;
+                }
+            } catch (error) {
+                console.error('Error checking AI status:', error);
+            }
+        }
+
+        async function analyzeArtisan() {
+            const description = document.getElementById('artisanDescription').value.trim();
+            const location = document.getElementById('artisanLocation').value.trim();
+            
+            if (!description || description.length < 20) {
+                alert('Please provide a detailed description of your craft (at least 20 characters)');
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                const response = await fetch('/api/analyze-artisan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ description, location })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    currentAnalysis = data;
+                    displayResults(data);
+                } else {
+                    alert('Analysis failed: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Error analyzing artisan:', error);
+                alert('Network error. Please try again.');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function displayResults(data) {
+            // Show results section
+            document.getElementById('resultsSection').style.display = 'block';
+            
+            // Display AI Analysis
+            displayAIAnalysis(data.ai_analysis);
+            
+            // Display Income Analysis
+            displayIncomeAnalysis(data.growth_potential);
+            
+            // Initialize Map
+            initializeMap(data.coordinates);
+            
+            // Display Opportunities
+            displayOpportunities(data.opportunities);
+            
+            // Display Growth Strategies
+            displayGrowthStrategies(data.growth_potential);
+            
+            // Scroll to results
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function displayAIAnalysis(analysis) {
+            const resultsDiv = document.getElementById('aiAnalysisResults');
+            
+            resultsDiv.innerHTML = `
+                <div class="mb-3">
+                    <strong>Artisan Type:</strong>
+                    <span class="badge bg-info ms-2">${analysis.artisan_type.replace('_', ' ').toUpperCase()}</span>
+                </div>
+                <div class="mb-3">
+                    <strong>Skill Level:</strong>
+                    <span class="badge bg-warning ms-2">${analysis.skill_level.toUpperCase()}</span>
+                </div>
+                <div class="mb-3">
+                    <strong>Business Potential:</strong>
+                    <span class="badge bg-success ms-2">${analysis.business_potential.toUpperCase()}</span>
+                </div>
+                <div class="mb-3">
+                    <strong>Specialization:</strong> ${analysis.specialization}
+                </div>
+                <div class="mb-3">
+                    <strong>Target Market:</strong> ${analysis.target_market}
+                </div>
+                <div>
+                    <strong>Recommended Actions:</strong>
+                    <ul class="mt-2">
+                        ${analysis.recommended_actions.map(action => `<li>${action}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+
+        function displayIncomeAnalysis(growth) {
+            const incomeDiv = document.getElementById('incomeAnalysis');
+            
+            incomeDiv.innerHTML = `
+                <div class="income-display mb-3">
+                    ${growth.current_revenue_potential}
+                </div>
+                <div class="text-center">
+                    <small class="text-secondary">Monthly Income Potential</small>
+                </div>
+                <div class="mt-3">
+                    <strong>Market Trends:</strong>
+                    <div class="mt-2">
+                        ${growth.market_trends.map(trend => 
+                            `<span class="badge bg-secondary me-2">${trend}</span>`
+                        ).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function initializeMap(coords) {
+            // Clear existing map
+            if (map) {
+                map.remove();
+            }
+            
+            // Create new map
+            map = L.map('map-container').setView([coords.lat, coords.lng], 10);
+            
+            // Add tile layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            
+            // Add artisan location marker
+            const artisanIcon = L.divIcon({
+                html: '<i class="bi bi-geo-alt-fill text-danger" style="font-size: 24px;"></i>',
+                iconSize: [30, 30],
+                className: 'custom-div-icon'
+            });
+            
+            L.marker([coords.lat, coords.lng], { icon: artisanIcon })
+                .addTo(map)
+                .bindPopup('<strong>Your Location</strong>')
+                .openPopup();
+        }
+
+        function displayOpportunities(opportunities) {
+            const opportunitiesDiv = document.getElementById('opportunitiesList');
+            
+            if (opportunities.length === 0) {
+                opportunitiesDiv.innerHTML = '<p class="text-center text-secondary">No opportunities found for your location. Try searching for nearby cities.</p>';
+                return;
+            }
+            
+            opportunitiesDiv.innerHTML = opportunities.map(opp => `
+                <div class="opportunity-card">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="opportunity-title">${opp.name}</div>
+                            <div class="opportunity-details">
+                                <i class="bi bi-geo-alt"></i> ${opp.location}<br>
+                                <i class="bi bi-calendar"></i> ${opp.dates}<br>
+                                <i class="bi bi-people"></i> ${opp.expected_visitors} visitors
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="price-tag">Fee: ${opp.participation_fee}</div>
+                            <div class="mt-2">
+                                <strong>Potential Sales:</strong><br>
+                                ${opp.potential_sales}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function displayGrowthStrategies(growth) {
+            const strategiesDiv = document.getElementById('growthStrategies');
+            
+            strategiesDiv.innerHTML = growth.growth_strategies.map(strategy => `
+                <div class="strategy-card">
+                    <div class="strategy-title">${strategy.strategy}</div>
+                    <div class="strategy-details">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Investment:</strong> ${strategy.investment_required}<br>
+                                <strong>Expected Return:</strong> ${strategy.expected_return}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Time to Implement:</strong> ${strategy.time_to_implement}<br>
+                                <strong>Difficulty:</strong> 
+                                <span class="badge bg-${strategy.difficulty === 'easy' ? 'success' : strategy.difficulty === 'medium' ? 'warning' : 'danger'}">
+                                    ${strategy.difficulty.toUpperCase()}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <span class="investment-amount">
+                                <i class="bi bi-cash"></i> Investment: ${strategy.investment_required}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        // Auto-resize textarea
+        document.getElementById('artisanDescription').addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+    </script>
+</body>
+</html>

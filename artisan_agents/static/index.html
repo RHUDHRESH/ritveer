@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArtisanHub - Artisan Marketplace Platform</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #e74c3c;
+            --accent-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --light-bg: #ecf0f1;
+            --dark-text: #2c3e50;
+            --gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--dark-text);
+        }
+
+        /* Navigation */
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            padding: 1rem 0;
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.5rem;
+            color: var(--primary-color) !important;
+        }
+
+        .navbar-brand i {
+            color: var(--accent-color);
+        }
+
+        /* Hero Section */
+        .hero-section {
+            padding: 100px 0 50px;
+            text-align: center;
+            color: white;
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: bold;
+            margin-bottom: 1.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            animation: fadeInUp 1s ease;
+        }
+
+        .hero-subtitle {
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            animation: fadeInUp 1s ease 0.2s;
+            animation-fill-mode: both;
+        }
+
+        /* Cards */
+        .feature-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: var(--gradient-1);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Request Form */
+        .request-form {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            margin-top: -50px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .form-control, .form-select {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
+        .btn-primary-custom {
+            background: var(--gradient-1);
+            border: none;
+            border-radius: 50px;
+            padding: 0.75rem 2rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        /* Status Cards */
+        .status-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .status-card.pending {
+            border-left-color: var(--warning-color);
+        }
+
+        .status-card.completed {
+            border-left-color: var(--success-color);
+        }
+
+        .status-card.error {
+            border-left-color: var(--secondary-color);
+        }
+
+        /* Supplier Cards */
+        .supplier-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .supplier-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .supplier-card.selected {
+            border: 2px solid var(--accent-color);
+            background: linear-gradient(to right, rgba(52, 152, 219, 0.05), transparent);
+        }
+
+        /* Charts */
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        /* Loading Spinner */
+        .loading-spinner {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--accent-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .hero-subtitle {
+                font-size: 1.1rem;
+            }
+            
+            .request-form {
+                padding: 2rem;
+                margin-top: -30px;
+            }
+        }
+
+        /* Tab Navigation */
+        .nav-tabs {
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .nav-tabs .nav-link {
+            border: none;
+            color: var(--dark-text);
+            font-weight: 500;
+            padding: 1rem 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .nav-tabs .nav-link.active {
+            background: var(--gradient-1);
+            color: white;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .nav-tabs .nav-link:hover {
+            color: var(--accent-color);
+        }
+
+        /* Stats Cards */
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: var(--gradient-1);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+
+        .custom-toast {
+            background: white;
+            border-radius: 10px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            animation: slideInRight 0.3s ease;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Spinner -->
+    <div class="loading-spinner" id="loadingSpinner">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-hammer"></i> ArtisanHub
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#home">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#request">Make Request</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#status">Order Status</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#analytics">Analytics</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero-section">
+        <div class="container">
+            <h1 class="hero-title">Welcome to ArtisanHub</h1>
+            <p class="hero-subtitle">Connecting Artisans with Quality Suppliers through AI-Powered Intelligence</p>
+            <div class="row mt-5">
+                <div class="col-md-4 mb-4">
+                    <div class="feature-card animate__animated animate__fadeInUp">
+                        <div class="feature-icon">
+                            <i class="bi bi-robot"></i>
+                        </div>
+                        <h4>Smart Matching</h4>
+                        <p>AI-powered supplier matching based on your requirements and location</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="feature-card animate__animated animate__fadeInUp animate__delay-1s">
+                        <div class="feature-icon">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <h4>Secure Processing</h4>
+                        <p>Advanced security validation and policy enforcement for all transactions</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="feature-card animate__animated animate__fadeInUp animate__delay-2s">
+                        <div class="feature-icon">
+                            <i class="bi bi-lightning"></i>
+                        </div>
+                        <h4>Real-time Tracking</h4>
+                        <p>Live order tracking with instant notifications and updates</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Request Form Section -->
+    <section id="request" class="py-5">
+        <div class="container">
+            <div class="request-form">
+                <h2 class="text-center mb-4">Make a Material Request</h2>
+                <form id="requestForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="material" class="form-label">Material Required</label>
+                            <input type="text" class="form-control" id="material" placeholder="e.g., Aluminum sheets, Steel rods" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="quantity" class="form-label">Quantity</label>
+                            <input type="number" class="form-control" id="quantity" placeholder="Amount" min="1" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="unit" class="form-label">Unit</label>
+                            <select class="form-select" id="unit" required>
+                                <option value="">Select Unit</option>
+                                <option value="kg">Kilograms (kg)</option>
+                                <option value="pcs">Pieces (pcs)</option>
+                                <option value="m">Meters (m)</option>
+                                <option value="liters">Liters</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="location" class="form-label">Delivery Location</label>
+                            <input type="text" class="form-control" id="location" placeholder="e.g., Chennai, Mumbai" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="urgency" class="form-label">Urgency Level</label>
+                            <select class="form-select" id="urgency" required>
+                                <option value="">Select Urgency</option>
+                                <option value="NORMAL">Normal (3-5 days)</option>
+                                <option value="URGENT">Urgent (1-2 days)</option>
+                                <option value="EMERGENCY">Emergency (Same day)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Additional Notes</label>
+                        <textarea class="form-control" id="notes" rows="3" placeholder="Any specific requirements or details..."></textarea>
+                    </div>
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary btn-lg btn-primary-custom">
+                            <i class="bi bi-send"></i> Submit Request
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Status Section -->
+    <section id="status" class="py-5">
+        <div class="container">
+            <h2 class="text-center mb-5">Order Status Tracking</h2>
+            
+            <!-- Tab Navigation -->
+            <ul class="nav nav-tabs mb-4" id="statusTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="active-tab" data-bs-toggle="tab" data-bs-target="#active-orders" type="button">
+                        <i class="bi bi-clock"></i> Active Orders
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="suppliers-tab" data-bs-toggle="tab" data-bs-target="#suppliers" type="button">
+                        <i class="bi bi-truck"></i> Supplier Matching
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="completed-tab" data-bs-toggle="tab" data-bs-target="#completed-orders" type="button">
+                        <i class="bi bi-check-circle"></i> Completed Orders
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="statusTabContent">
+                <div class="tab-pane fade show active" id="active-orders" role="tabpanel">
+                    <div id="activeOrdersContainer">
+                        <div class="text-center py-5">
+                            <i class="bi bi-inbox display-1 text-muted"></i>
+                            <p class="text-muted">No active orders. Submit a request to get started!</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="suppliers" role="tabpanel">
+                    <div id="suppliersContainer">
+                        <div class="text-center py-5">
+                            <i class="bi bi-search display-1 text-muted"></i>
+                            <p class="text-muted">Supplier matching will appear here after order submission.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="completed-orders" role="tabpanel">
+                    <div id="completedOrdersContainer">
+                        <div class="text-center py-5">
+                            <i class="bi bi-check2-square display-1 text-muted"></i>
+                            <p class="text-muted">No completed orders yet.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Analytics Section -->
+    <section id="analytics" class="py-5">
+        <div class="container">
+            <h2 class="text-center mb-5">Platform Analytics</h2>
+            
+            <!-- Stats Cards -->
+            <div class="row mb-5">
+                <div class="col-md-3 mb-4">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalOrders">0</div>
+                        <div class="stat-label">Total Orders</div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <div class="stat-card">
+                        <div class="stat-number" id="activeSuppliers">0</div>
+                        <div class="stat-label">Active Suppliers</div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <div class="stat-card">
+                        <div class="stat-number" id="avgDeliveryTime">0h</div>
+                        <div class="stat-label">Avg. Delivery Time</div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-4">
+                    <div class="stat-card">
+                        <div class="stat-number" id="successRate">0%</div>
+                        <div class="stat-label">Success Rate</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="chart-container">
+                        <h5>Order Trends</h5>
+                        <canvas id="orderTrendsChart"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-4">
+                    <div class="chart-container">
+                        <h5>Material Categories</h5>
+                        <canvas id="materialCategoriesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container text-center">
+            <p>&copy; 2024 ArtisanHub. Powered by AI Agents & Advanced Analytics.</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Global state
+        let orders = [];
+        let suppliers = [];
+        let selectedSuppliers = new Set();
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+            setupEventListeners();
+            loadMockData();
+            initializeCharts();
+        });
+
+        function initializeApp() {
+            console.log('ArtisanHub Frontend Initialized');
+            updateStats();
+        }
+
+        function setupEventListeners() {
+            // Request form submission
+            document.getElementById('requestForm').addEventListener('submit', handleRequestSubmit);
+            
+            // Smooth scrolling for navigation
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+            });
+        }
+
+        async function handleRequestSubmit(e) {
+            e.preventDefault();
+            
+            showLoading();
+            
+            const formData = {
+                material: document.getElementById('material').value,
+                quantity: parseFloat(document.getElementById('quantity').value),
+                unit: document.getElementById('unit').value,
+                location: document.getElementById('location').value,
+                urgency: document.getElementById('urgency').value,
+                notes: document.getElementById('notes').value
+            };
+
+            try {
+                // Simulate API call to backend
+                const response = await simulateAPIRequest('/agents', 'POST', formData);
+                
+                if (response.success) {
+                    // Create new order
+                    const order = {
+                        id: 'ORD-' + Date.now(),
+                        ...formData,
+                        status: 'intake_processing',
+                        createdAt: new Date().toISOString(),
+                        statusHistory: [
+                            { status: 'submitted', timestamp: new Date().toISOString() }
+                        ]
+                    };
+                    
+                    orders.push(order);
+                    updateOrderDisplay(order);
+                    updateStats();
+                    
+                    showToast('Request submitted successfully!', 'success');
+                    
+                    // Reset form
+                    document.getElementById('requestForm').reset();
+                    
+                    // Show supplier matching after a delay
+                    setTimeout(() => {
+                        showSupplierMatching(order);
+                    }, 2000);
+                } else {
+                    showToast('Failed to submit request. Please try again.', 'error');
+                }
+            } catch (error) {
+                console.error('Error submitting request:', error);
+                showToast('Error submitting request. Please try again.', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function showSupplierMatching(order) {
+            // Switch to suppliers tab
+            const suppliersTab = new bootstrap.Tab(document.getElementById('suppliers-tab'));
+            suppliersTab.show();
+            
+            // Generate mock suppliers
+            const mockSuppliers = generateMockSuppliers(order);
+            displaySuppliers(mockSuppliers);
+        }
+
+        function generateMockSuppliers(order) {
+            const supplierNames = [
+                'Chennai Metal Works', 'Mumbai Steel Suppliers', 'Delhi Industrial Materials',
+                'Bangalore Hardware Hub', 'Hyderabad Construction Supply', 'Pune Manufacturing Co.'
+            ];
+            
+            return supplierNames.slice(0, 4).map((name, index) => ({
+                id: `SUP-${Date.now()}-${index}`,
+                name: name,
+                location: order.location,
+                price: Math.random() * 500 + 100,
+                deliveryDays: Math.floor(Math.random() * 5) + 1,
+                rating: (Math.random() * 2 + 3).toFixed(1),
+                confidence: Math.random() * 0.4 + 0.6,
+                material: order.material
+            }));
+        }
+
+        function displaySuppliers(suppliers) {
+            const container = document.getElementById('suppliersContainer');
+            
+            const html = suppliers.map(supplier => `
+                <div class="supplier-card" data-supplier-id="${supplier.id}">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5>${supplier.name}</h5>
+                            <p class="mb-1"><i class="bi bi-geo-alt"></i> ${supplier.location}</p>
+                            <p class="mb-1"><i class="bi bi-star text-warning"></i> ${supplier.rating}/5.0</p>
+                            <p class="mb-0"><small class="text-muted">Match confidence: ${(supplier.confidence * 100).toFixed(0)}%</small></p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <h4 class="text-primary">₹${supplier.price.toFixed(2)}</h4>
+                            <p class="mb-1">${supplier.deliveryDays} days delivery</p>
+                            <button class="btn btn-outline-primary btn-sm select-supplier" data-supplier-id="${supplier.id}">
+                                Select
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            container.innerHTML = html;
+            
+            // Add event listeners to supplier selection buttons
+            container.querySelectorAll('.select-supplier').forEach(btn => {
+                btn.addEventListener('click', handleSupplierSelection);
+            });
+        }
+
+        function handleSupplierSelection(e) {
+            const supplierId = e.target.dataset.supplierId;
+            const card = document.querySelector(`[data-supplier-id="${supplierId}"]`);
+            
+            if (selectedSuppliers.has(supplierId)) {
+                selectedSuppliers.delete(supplierId);
+                card.classList.remove('selected');
+                e.target.textContent = 'Select';
+                e.target.classList.remove('btn-success');
+                e.target.classList.add('btn-outline-primary');
+            } else {
+                selectedSuppliers.add(supplierId);
+                card.classList.add('selected');
+                e.target.textContent = 'Selected';
+                e.target.classList.remove('btn-outline-primary');
+                e.target.classList.add('btn-success');
+            }
+        }
+
+        function updateOrderDisplay(order) {
+            const container = document.getElementById('activeOrdersContainer');
+            
+            // Remove empty state message if it exists
+            const emptyState = container.querySelector('.text-center');
+            if (emptyState) {
+                emptyState.remove();
+            }
+            
+            const orderCard = createOrderCard(order);
+            container.insertAdjacentHTML('afterbegin', orderCard);
+        }
+
+        function createOrderCard(order) {
+            const statusClass = getStatusClass(order.status);
+            const statusIcon = getStatusIcon(order.status);
+            
+            return `
+                <div class="status-card ${statusClass} animate__animated animate__fadeInUp">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h5>${order.id}</h5>
+                            <p class="mb-1"><strong>${order.material}</strong> - ${order.quantity} ${order.unit}</p>
+                            <p class="mb-1"><i class="bi bi-geo-alt"></i> ${order.location}</p>
+                            <p class="mb-0"><small class="text-muted">Placed: ${new Date(order.createdAt).toLocaleString()}</small></p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="mb-2">
+                                <span class="badge bg-${statusClass}">${statusIcon} ${formatStatus(order.status)}</span>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary" onclick="trackOrder('${order.id}')">
+                                <i class="bi bi-eye"></i> Track
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getStatusClass(status) {
+            const statusMap = {
+                'intake_processing': 'warning',
+                'security_check': 'warning',
+                'supplier_matching': 'info',
+                'quote_ready': 'info',
+                'committed': 'primary',
+                'in_delivery': 'info',
+                'delivered': 'success',
+                'completed': 'success',
+                'failed': 'danger'
+            };
+            return statusMap[status] || 'secondary';
+        }
+
+        function getStatusIcon(status) {
+            const iconMap = {
+                'intake_processing': '📝',
+                'security_check': '🚨',
+                'supplier_matching': '🔍',
+                'quote_ready': '💰',
+                'committed': '✅',
+                'in_delivery': '🚚',
+                'delivered': '📦',
+                'completed': '🎉',
+                'failed': '❌'
+            };
+            return iconMap[status] || '📋';
+        }
+
+        function formatStatus(status) {
+            return status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+        }
+
+        function trackOrder(orderId) {
+            const order = orders.find(o => o.id === orderId);
+            if (order) {
+                showToast(`Tracking order ${orderId}: Current status - ${formatStatus(order.status)}`, 'info');
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('totalOrders').textContent = orders.length;
+            document.getElementById('activeSuppliers').textContent = Math.floor(Math.random() * 50) + 20;
+            document.getElementById('avgDeliveryTime').textContent = (Math.random() * 24 + 12).toFixed(0) + 'h';
+            document.getElementById('successRate').textContent = (Math.random() * 20 + 80).toFixed(0) + '%';
+        }
+
+        function initializeCharts() {
+            // Order Trends Chart
+            const orderTrendsCtx = document.getElementById('orderTrendsChart').getContext('2d');
+            new Chart(orderTrendsCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Orders',
+                        data: [12, 19, 15, 25, 22, 30, 28],
+                        borderColor: 'rgb(52, 152, 219)',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Material Categories Chart
+            const materialCategoriesCtx = document.getElementById('materialCategoriesChart').getContext('2d');
+            new Chart(materialCategoriesCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Metals', 'Wood', 'Plastics', 'Textiles', 'Others'],
+                    datasets: [{
+                        data: [35, 25, 20, 15, 5],
+                        backgroundColor: [
+                            'rgba(52, 152, 219, 0.8)',
+                            'rgba(46, 204, 113, 0.8)',
+                            'rgba(241, 196, 15, 0.8)',
+                            'rgba(231, 76, 60, 0.8)',
+                            'rgba(155, 89, 182, 0.8)'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function loadMockData() {
+            // Load some mock historical data for demonstration
+            setTimeout(() => {
+                updateStats();
+            }, 1000);
+        }
+
+        // Utility functions
+        function showLoading() {
+            document.getElementById('loadingSpinner').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingSpinner').style.display = 'none';
+        }
+
+        function showToast(message, type = 'info') {
+            const toastContainer = document.getElementById('toastContainer');
+            const toastId = 'toast-' + Date.now();
+            
+            const iconMap = {
+                success: 'bi-check-circle-fill text-success',
+                error: 'bi-x-circle-fill text-danger',
+                warning: 'bi-exclamation-triangle-fill text-warning',
+                info: 'bi-info-circle-fill text-info'
+            };
+            
+                const toast = `
+                <div id="${toastId}" class="custom-toast">
+                    <i class="bi ${iconMap[type]} me-2"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            toastContainer.insertAdjacentHTML('beforeend', toast);
+            
+            // Auto remove after 3 seconds
+            setTimeout(() => {
+                const toastElement = document.getElementById(toastId);
+                if (toastElement) {
+                    toastElement.remove();
+                }
+            }, 3000);
+        }
+
+        async function simulateAPIRequest(endpoint, method = 'GET', data = null) {
+            // Simulate API delay
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Mock successful response
+            return {
+                success: true,
+                data: data || { message: 'Success' },
+                timestamp: new Date().toISOString()
+            };
+        }
+
+        // Simulate real-time updates
+        setInterval(() => {
+            if (orders.length > 0) {
+                // Randomly update order status for demonstration
+                const activeOrders = orders.filter(o => o.status !== 'completed' && o.status !== 'failed');
+                if (activeOrders.length > 0 && Math.random() > 0.7) {
+                    const randomOrder = activeOrders[Math.floor(Math.random() * activeOrders.length)];
+                    updateOrderStatus(randomOrder);
+                }
+            }
+        }, 10000);
+
+        function updateOrderStatus(order) {
+            const statusFlow = {
+                'intake_processing': 'security_check',
+                'security_check': 'supplier_matching',
+                'supplier_matching': 'quote_ready',
+                'quote_ready': 'committed',
+                'committed': 'in_delivery',
+                'in_delivery': 'delivered',
+                'delivered': 'completed'
+            };
+            
+            if (statusFlow[order.status]) {
+                order.status = statusFlow[order.status];
+                order.statusHistory.push({
+                    status: order.status,
+                    timestamp: new Date().toISOString()
+                });
+                
+                // Update the display
+                const orderCard = document.querySelector(`[data-order-id="${order.id}"]`);
+                if (orderCard) {
+                    orderCard.replaceWith(createOrderCard(order));
+                }
+                
+                showToast(`Order ${order.id} status updated: ${formatStatus(order.status)}`, 'info');
+            }
+        }
+    </script>
+</body>
+</html>

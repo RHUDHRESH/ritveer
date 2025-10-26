@@ -1,0 +1,14 @@
+{
+  "flight_check_summary": {
+    "total_checks": 8,
+    "passed_checks": 7,
+    "success_rate": 87.5,
+    "timestamp": "2025-10-26T17:48:45.658830"
+  },
+  "detailed_results": {
+    "Flask Server": {
+      "status": "PASS",
+      "message": "Server responding correctly",
+      "details": {
+        "status": "healthy",
+        "components": 

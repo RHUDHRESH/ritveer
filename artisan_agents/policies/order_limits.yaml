@@ -1,0 +1,13 @@
+
+min_order_value: 10.0
+max_order_value: 10000.0
+supported_regions:
+  - US
+  - CA
+  - GB
+  - AU
+high_value_threshold: 5000.0
+currency: USD
+version: "1.0"
+effective_date: "2025-01-01"
+notes: "Standard order limits for all regions"
