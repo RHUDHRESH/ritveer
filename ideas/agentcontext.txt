@@ -1,0 +1,1566 @@
+# 🔧 **ULTRA-DETAILED AGENT & TOOL BUILDING GUIDE**
+
+## **PART 1: ENVIRONMENT SETUP (15 minutes)**
+
+### Step 1: Create Project Structure
+
+```bash
+# Open your terminal and run these commands EXACTLY:
+
+# Create main project directory
+mkdir karigar-agent
+cd karigar-agent
+
+# Create all subdirectories at once
+mkdir -p src/karigar/{agents,tools,memory,schemas,api,config,orchestrators}
+
+# Create __init__.py files (tells Python these are packages)
+touch src/karigar/__init__.py
+touch src/karigar/agents/__init__.py
+touch src/karigar/tools/__init__.py
+touch src/karigar/memory/__init__.py
+touch src/karigar/schemas/__init__.py
+touch src/karigar/api/__init__.py
+touch src/karigar/config/__init__.py
+touch src/karigar/orchestrators/__init__.py
+
+# Create root level files
+touch .env
+touch .gitignore
+touch requirements.txt
+touch README.md
+```
+
+### Step 2: Setup Virtual Environment
+
+```bash
+# Create virtual environment
+python3 -m venv venv
+
+# Activate it (Mac/Linux)
+source venv/bin/activate
+
+# OR activate it (Windows)
+# venv\Scripts\activate
+
+# Your prompt should now show (venv) at the start
+```
+
+### Step 3: Install Dependencies
+
+Create `requirements.txt` with this EXACT content:
+
+```txt
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+langgraph==0.0.40
+langchain==0.1.0
+langchain-openai==0.0.5
+sqlalchemy==2.0.23
+aiosqlite==0.19.0
+python-multipart==0.0.6
+httpx==0.25.2
+pytest==7.4.3
+pytest-asyncio==0.21.1
+chromadb==0.4.18
+tiktoken==0.5.2
+python-dotenv==1.0.0
+geopy==2.4.0
+```
+
+Now install:
+
+```bash
+pip install -r requirements.txt
+
+# Verify installation
+pip list | grep langgraph  # Should show langgraph version
+```
+
+### Step 4: Create .env File
+
+Create `.env` with these variables:
+
+```bash
+# OpenAI API Key (get from https://platform.openai.com/api-keys)
+OPENAI_API_KEY=sk-your-key-here
+
+# Perplexity API Key (optional, get from https://docs.perplexity.ai/)
+PERPLEXITY_API_KEY=your-key-here
+
+# Database
+DATABASE_URL=sqlite:///./karigar.db
+
+# Application
+APP_NAME=KarigarAgent
+DEBUG=True
+```
+
+---
+
+## **PART 2: DATABASE SCHEMAS (20 minutes)**
+
+### Step 1: Create Base Schema File
+
+**File:** `src/karigar/schemas/models.py`
+
+```python
+"""
+Database models using SQLAlchemy ORM.
+Each class represents a table in the SQLite database.
+"""
+
+from sqlalchemy import Column, String, Integer, Float, Text, DateTime, JSON, ForeignKey, Boolean
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
+from datetime import datetime
+import uuid
+
+# Base class for all models
+Base = declarative_base()
+
+def generate_id():
+    """Generate unique ID for records"""
+    return str(uuid.uuid4())
+
+
+class Artisan(Base):
+    """
+    Stores artisan (user) information
+    """
+    __tablename__ = "artisans"
+    
+    id = Column(String, primary_key=True, default=generate_id)
+    name = Column(String, nullable=False)
+    phone = Column(String, unique=True, nullable=False)
+    email = Column(String, unique=True, nullable=True)
+    location = Column(String)
+    city = Column(String)
+    state = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    material_requests = relationship("MaterialRequest", back_populates="artisan")
+    orders = relationship("Order", back_populates="artisan")
+    micro_stores = relationship("MicroStore", back_populates="artisan")
+
+
+class MaterialRequest(Base):
+    """
+    Stores material requests from artisans
+    This is what IntakeAgent creates
+    """
+    __tablename__ = "material_requests"
+    
+    id = Column(String, primary_key=True, default=generate_id)
+    artisan_id = Column(String, ForeignKey("artisans.id"), nullable=False)
+    
+    # Request details
+    material = Column(String, nullable=False)  # e.g., "cement", "bricks"
+    quantity = Column(Float, nullable=False)   # e.g., 100 (kg or units)
+    unit = Column(String, default="kg")        # e.g., "kg", "pieces"
+    budget = Column(Float, nullable=False)     # in rupees
+    timeline = Column(String)                  # e.g., "next week", "2 days"
+    
+    # Status tracking
+    status = Column(String, default="pending")  # pending, quoted, ordered, delivered, cancelled
+    
+    # Metadata
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    artisan = relationship("Artisan", back_populates="material_requests")
+    quotes = relationship("SupplierQuote", back_populates="material_request")
+
+
+class Supplier(Base):
+    """
+    Stores supplier information
+    """
+    __tablename__ = "suppliers"
+    
+    id = Column(String, primary_key=True, default=generate_id)
+    name = Column(String, nullable=False)
+    phone = Column(String)
+    email = Column(String)
+    
+    # Location
+    address = Column(Text)
+    city = Column(String)
+    state = Column(String)
+    latitude = Column(Float)
+    longitude = Column(Float)
+    delivery_radius_km = Column(Float, default=50)
+    
+    # Business details
+    materials = Column(JSON)  # List of materials they supply: ["cement", "bricks"]
+    rating = Column(Float, default=3.0)
+    total_reviews = Column(Integer, default=0)
+    
+    # Status
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    quotes = relationship("SupplierQuote", back_populates="supplier")
+
+
+class SupplierQuote(Base):
+    """
+    Stores quotes from suppliers for material requests
+    SupplierAgent creates these
+    """
+    __tablename__ = "supplier_quotes"
+    
+    id = Column(String, primary_key=True, default=generate_id)
+    request_id = Column(String, ForeignKey("material_requests.id"), nullable=False)
+    supplier_id = Column(String, ForeignKey("suppliers.id"), nullable=False)
+    
+    # Quote details
+    price_per_unit = Column(Float, nullable=False)
+    total_price = Column(Float, nullable=False)
+    delivery_charge = Column(Float, default=0)
+    delivery_days = Column(Integer, default=3)
+    
+    # Selection
+    selected = Column(Boolean, default=False)
+    
+    # Metadata
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    material_request = relationship("MaterialRequest", back_populates="quotes")
+    supplier = relationship("Supplier", back_populates="quotes")
+
+
+class Order(Base):
+    """
+    Stores confirmed orders
+    CommitAgent creates these after quote selection
+    """
+    __tablename__ = "orders"
+    
+    id = Column(String, primary_key=True, default=generate_id)
+    artisan_id = Column(String, ForeignKey("artisans.id"), nullable=False)
+    request_id = Column(String, ForeignKey("material_requests.id"), nullable=False)
+    quote_id = Column(String, ForeignKey("supplier_quotes.id"), nullable=False)
+    
+    # Payment details
+    total_amount = Column(Float, nullable=False)
+    upi_link = Column(String)
+    payment_status = Column(String, default="pending")  # pending, completed, failed
+    
+    # Order documents
+    po_path = Column(String)  # Path to PDF purchase order
+    
+    # Status
+    status = Column(String, default="confirmed")  # confirmed, in_transit, delivered, cancelled
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    delivered_at = Column(DateTime, nullable=True)
+    
+    # Relationships
+    artisan = relationship("Artisan", back_populates="orders")
+
+
+class MicroStore(Base):
+    """
+    Stores micro-store (product listing) information
+    SalesAgent creates these
+    """
+    __tablename__ = "micro_stores"
+    
+    id = Column(String, primary_key=True, default=generate_id)
+    artisan_id = Column(String, ForeignKey("artisans.id"), nullable=False)
+    
+    # Product details
+    product_name = Column(String, nullable=False)
+    description = Column(Text)
+    price = Column(Float, nullable=False)
+    
+    # Media
+    image_path = Column(String)
+    qr_code_path = Column(String)
+    
+    # Store URL
+    store_url = Column(String, unique=True)
+    
+    # Status
+    is_active = Column(Boolean, default=True)
+    views = Column(Integer, default=0)
+    
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    artisan = relationship("Artisan", back_populates="micro_stores")
+
+
+class Ledger(Base):
+    """
+    Stores all financial transactions
+    CashAgent manages these
+    """
+    __tablename__ = "ledger"
+    
+    id = Column(String, primary_key=True, default=generate_id)
+    artisan_id = Column(String, ForeignKey("artisans.id"), nullable=False)
+    order_id = Column(String, ForeignKey("orders.id"), nullable=True)
+    
+    # Transaction details
+    type = Column(String, nullable=False)  # debit, credit
+    amount = Column(Float, nullable=False)
+    description = Column(Text)
+    category = Column(String)  # material_purchase, sale, delivery_fee
+    
+    # Balance tracking
+    balance_after = Column(Float)  # Balance after this transaction
+    
+    # Timestamp
+    timestamp = Column(DateTime, default=datetime.utcnow)
+```
+
+### Step 2: Create Database Connection Module
+
+**File:** `src/karigar/memory/sql_memory.py`
+
+```python
+"""
+Database connection and session management.
+"""
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from karigar.schemas.models import Base
+import os
+
+# Get database URL from environment
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./karigar.db")
+
+# Create engine
+# check_same_thread=False is needed for SQLite to work with FastAPI
+engine = create_engine(
+    DATABASE_URL,
+    connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {},
+    echo=True  # Set to False in production to reduce logs
+)
+
+# Create session factory
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+def init_db():
+    """
+    Initialize database - create all tables.
+    Run this once at startup.
+    """
+    print("Creating database tables...")
+    Base.metadata.create_all(bind=engine)
+    print("Database tables created successfully!")
+
+
+def get_session():
+    """
+    Get a database session.
+    Use this in your code to interact with database.
+    
+    Usage:
+        session = get_session()
+        try:
+            # Do database operations
+            artisan = session.query(Artisan).filter_by(phone="1234567890").first()
+        finally:
+            session.close()
+    """
+    return SessionLocal()
+
+
+def seed_sample_data():
+    """
+    Insert sample data for testing.
+    Run this after init_db() for the first time.
+    """
+    from karigar.schemas.models import Artisan, Supplier
+    
+    session = get_session()
+    
+    try:
+        # Check if data already exists
+        if session.query(Artisan).count() > 0:
+            print("Sample data already exists, skipping...")
+            return
+        
+        # Create sample artisan
+        artisan = Artisan(
+            name="Ravi Kumar",
+            phone="9876543210",
+            email="ravi@example.com",
+            location="Nehru Nagar, Delhi",
+            city="Delhi",
+            state="Delhi"
+        )
+        session.add(artisan)
+        
+        # Create sample suppliers
+        suppliers = [
+            Supplier(
+                name="BuildMart Delhi",
+                phone="9123456780",
+                address="Sector 15, Noida",
+                city="Noida",
+                state="Uttar Pradesh",
+                latitude=28.5355,
+                longitude=77.3910,
+                materials=["cement", "sand", "steel"],
+                rating=4.5,
+                total_reviews=120,
+                delivery_radius_km=30
+            ),
+            Supplier(
+                name="Quick Supply Co",
+                phone="9123456781",
+                address="Rohini, Delhi",
+                city="Delhi",
+                state="Delhi",
+                latitude=28.7041,
+                longitude=77.1025,
+                materials=["bricks", "cement", "tiles"],
+                rating=4.2,
+                total_reviews=85,
+                delivery_radius_km=50
+            ),
+            Supplier(
+                name="Metro Builders Supply",
+                phone="9123456782",
+                address="Dwarka, Delhi",
+                city="Delhi",
+                state="Delhi",
+                latitude=28.5921,
+                longitude=77.0460,
+                materials=["cement", "steel", "paint"],
+                rating=4.7,
+                total_reviews=200,
+                delivery_radius_km=40
+            )
+        ]
+        
+        for supplier in suppliers:
+            session.add(supplier)
+        
+        # Commit to database
+        session.commit()
+        print("Sample data inserted successfully!")
+        
+    except Exception as e:
+        session.rollback()
+        print(f"Error seeding data: {e}")
+    finally:
+        session.close()
+```
+
+### Step 3: Initialize Database
+
+Create a setup script:
+
+**File:** `setup_db.py` (in root directory)
+
+```python
+"""
+Run this file ONCE to set up the database.
+Command: python setup_db.py
+"""
+
+from src.karigar.memory.sql_memory import init_db, seed_sample_data
+
+if __name__ == "__main__":
+    print("Setting up database...")
+    init_db()
+    seed_sample_data()
+    print("Database setup complete!")
+```
+
+Now run it:
+
+```bash
+# Make sure you're in the karigar-agent directory with venv activated
+python setup_db.py
+
+# You should see:
+# Creating database tables...
+# Database tables created successfully!
+# Sample data inserted successfully!
+# Database setup complete!
+
+# This creates a file called karigar.db in your directory
+ls -la  # You should see karigar.db
+```
+
+---
+
+## **PART 3: BUILDING TOOLS (45 minutes)**
+
+Tools are reusable functions that agents call to perform actions. Each tool should:
+1. Do ONE thing well
+2. Have clear input/output
+3. Handle errors gracefully
+4. Be testable independently
+
+### Tool 1: Supplier Search Tool
+
+**File:** `src/karigar/tools/supplier_search.py`
+
+```python
+"""
+Tool for finding suppliers based on material requests.
+Used by SupplierAgent.
+"""
+
+import httpx
+from typing import List, Dict, Optional
+from karigar.memory.sql_memory import get_session
+from karigar.schemas.models import Supplier
+from sqlalchemy import func
+
+
+class SupplierSearchTool:
+    """
+    Searches for suppliers locally and optionally via Perplexity API.
+    """
+    
+    def __init__(self, perplexity_api_key: Optional[str] = None):
+        """
+        Initialize the tool.
+        
+        Args:
+            perplexity_api_key: Optional API key for Perplexity web search
+        """
+        self.api_key = perplexity_api_key
+    
+    def search_local(
+        self,
+        material: str,
+        location: str = None,
+        max_distance_km: float = 50
+    ) -> List[Dict]:
+        """
+        Search for suppliers in local database.
+        
+        Args:
+            material: Material to search for (e.g., "cement")
+            location: Optional location filter
+            max_distance_km: Maximum delivery radius
+            
+        Returns:
+            List of supplier dictionaries with their details
+        """
+        session = get_session()
+        
+        try:
+            # Query suppliers that have this material
+            # JSON operations in SQLite require JSON_EXTRACT
+            query = session.query(Supplier).filter(
+                Supplier.is_active == True,
+                Supplier.materials.contains(material.lower())
+            )
+            
+            # Filter by delivery radius if needed
+            if max_distance_km:
+                query = query.filter(Supplier.delivery_radius_km >= max_distance_km)
+            
+            # Order by rating (best first)
+            query = query.order_by(Supplier.rating.desc())
+            
+            suppliers = query.all()
+            
+            # Convert to dictionaries
+            results = []
+            for supplier in suppliers:
+                results.append({
+                    "id": supplier.id,
+                    "name": supplier.name,
+                    "phone": supplier.phone,
+                    "city": supplier.city,
+                    "materials": supplier.materials,
+                    "rating": supplier.rating,
+                    "total_reviews": supplier.total_reviews,
+                    "delivery_radius_km": supplier.delivery_radius_km,
+                    "latitude": supplier.latitude,
+                    "longitude": supplier.longitude
+                })
+            
+            return results
+            
+        except Exception as e:
+            print(f"Error searching local suppliers: {e}")
+            return []
+        finally:
+            session.close()
+    
+    async def search_perplexity(
+        self,
+        material: str,
+        location: str
+    ) -> List[Dict]:
+        """
+        Fallback search using Perplexity API.
+        Only use if local results are insufficient.
+        
+        Args:
+            material: Material to search for
+            location: Location to search in
+            
+        Returns:
+            List of supplier dictionaries from web search
+        """
+        if not self.api_key:
+            print("No Perplexity API key provided, skipping web search")
+            return []
+        
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(
+                    "https://api.perplexity.ai/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {self.api_key}",
+                        "Content-Type": "application/json"
+                    },
+                    json={
+                        "model": "llama-3.1-sonar-small-128k-online",
+                        "messages": [
+                            {
+                                "role": "system",
+                                "content": "You are a helpful assistant that finds supplier information. Return results in JSON format."
+                            },
+                            {
+                                "role": "user",
+                                "content": f"Find 3 suppliers for {material} in {location} with their contact details and approximate prices. Return as JSON array."
+                            }
+                        ]
+                    }
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    # Parse the response
+                    # Note: You'll need to parse the LLM output which may be text
+                    # For MVP, we'll just return empty list if local search works
+                    return []
+                else:
+                    print(f"Perplexity API error: {response.status_code}")
+                    return []
+                    
+        except Exception as e:
+            print(f"Error calling Perplexity API: {e}")
+            return []
+    
+    async def search(
+        self,
+        material: str,
+        location: str = None,
+        max_distance_km: float = 50,
+        use_web_fallback: bool = False
+    ) -> List[Dict]:
+        """
+        Main search method - combines local and web search.
+        
+        Args:
+            material: Material to search for
+            location: Location filter
+            max_distance_km: Maximum delivery radius
+            use_web_fallback: Whether to use Perplexity if local results are few
+            
+        Returns:
+            List of all found suppliers
+        """
+        # First, search locally
+        local_results = self.search_local(material, location, max_distance_km)
+        
+        # If we have enough results, return them
+        if len(local_results) >= 3 or not use_web_fallback:
+            return local_results
+        
+        # Otherwise, supplement with web search
+        web_results = await self.search_perplexity(material, location)
+        
+        return local_results + web_results
+
+
+# Test function
+if __name__ == "__main__":
+    """
+    Test the supplier search tool.
+    Run: python -m src.karigar.tools.supplier_search
+    """
+    import asyncio
+    
+    async def test():
+        tool = SupplierSearchTool()
+        
+        print("Testing local search for cement...")
+        results = await tool.search(material="cement", location="Delhi")
+        
+        print(f"\nFound {len(results)} suppliers:")
+        for supplier in results:
+            print(f"  - {supplier['name']} (Rating: {supplier['rating']}/5)")
+    
+    asyncio.run(test())
+```
+
+**Test the tool:**
+
+```bash
+# From project root, run:
+python -m src.karigar.tools.supplier_search
+
+# Expected output:
+# Testing local search for cement...
+# Found 3 suppliers:
+#   - Metro Builders Supply (Rating: 4.7/5)
+#   - BuildMart Delhi (Rating: 4.5/5)
+#   - Quick Supply Co (Rating: 4.2/5)
+```
+
+### Tool 2: Quote Generator
+
+**File:** `src/karigar/tools/quote_generator.py`
+
+```python
+"""
+Tool for generating supplier quotes based on material requests.
+Used by SupplierAgent to create quote records.
+"""
+
+from typing import Dict, List
+from karigar.memory.sql_memory import get_session
+from karigar.schemas.models import SupplierQuote, MaterialRequest, Supplier
+
+
+class QuoteGeneratorTool:
+    """
+    Generates quotes from suppliers for material requests.
+    """
+    
+    @staticmethod
+    def calculate_quote(
+        supplier_id: str,
+        request_id: str,
+        base_price_per_unit: float,
+        quantity: float,
+        distance_km: float = 0
+    ) -> Dict:
+        """
+        Calculate a quote from a supplier.
+        
+        Args:
+            supplier_id: ID of the supplier
+            request_id: ID of the material request
+            base_price_per_unit: Base price per unit (e.g., per kg)
+            quantity: Quantity requested
+            distance_km: Distance for delivery charge calculation
+            
+        Returns:
+            Dictionary with quote details
+        """
+        # Calculate total price
+        total_price = base_price_per_unit * quantity
+        
+        # Calculate delivery charge based on distance
+        # Free delivery under 5km, ₹10/km after that
+        if distance_km <= 5:
+            delivery_charge = 0
+        else:
+            delivery_charge = (distance_km - 5) * 10
+        
+        # Calculate delivery days based on distance
+        if distance_km <= 10:
+            delivery_days = 1
+        elif distance_km <= 30:
+            delivery_days = 2
+        else:
+            delivery_days = 3
+        
+        return {
+            "supplier_id": supplier_id,
+            "request_id": request_id,
+            "price_per_unit": base_price_per_unit,
+            "total_price": total_price,
+            "delivery_charge": delivery_charge,
+            "delivery_days": delivery_days,
+            "final_total": total_price + delivery_charge
+        }
+    
+    @staticmethod
+    def save_quote(quote_data: Dict) -> SupplierQuote:
+        """
+        Save a quote to the database.
+        
+        Args:
+            quote_data: Dictionary with quote details from calculate_quote()
+            
+        Returns:
+            Created SupplierQuote object
+        """
+        session = get_session()
+        
+        try:
+            quote = SupplierQuote(
+                request_id=quote_data["request_id"],
+                supplier_id=quote_data["supplier_id"],
+                price_per_unit=quote_data["price_per_unit"],
+                total_price=quote_data["total_price"],
+                delivery_charge=quote_data["delivery_charge"],
+                delivery_days=quote_data["delivery_days"]
+            )
+            
+            session.add(quote)
+            session.commit()
+            session.refresh(quote)  # Get the generated ID
+            
+            return quote
+            
+        except Exception as e:
+            session.rollback()
+            print(f"Error saving quote: {e}")
+            raise
+        finally:
+            session.close()
+    
+    @staticmethod
+    def generate_quotes_for_request(
+        request_id: str,
+        suppliers: List[Dict]
+    ) -> List[SupplierQuote]:
+        """
+        Generate quotes from multiple suppliers for a material request.
+        
+        Args:
+            request_id: ID of the material request
+            suppliers: List of supplier dictionaries from SupplierSearchTool
+            
+        Returns:
+            List of created SupplierQuote objects
+        """
+        session = get_session()
+        
+        try:
+            # Get the material request details
+            request = session.query(MaterialRequest).filter_by(id=request_id).first()
+            if not request:
+                raise ValueError(f"Material request {request_id} not found")
+            
+            quotes = []
+            
+            # Define base prices for materials (in real app, get from supplier data)
+            material_prices = {
+                "cement": 350,  # per 50kg bag
+                "bricks": 8,     # per piece
+                "sand": 50,      # per cubic foot
+                "steel": 55,     # per kg
+                "tiles": 45      # per sq ft
+            }
+            
+            base_price = material_prices.get(request.material.lower(), 100)
+            
+            # Generate quote from each supplier
+            for supplier in suppliers:
+                # Add some variation to prices (±10%)
+                import random
+                price_variation = random.uniform(0.9, 1.1)
+                supplier_price = base_price * price_variation
+                
+                # Calculate quote
+                quote_data = QuoteGeneratorTool.calculate_quote(
+                    supplier_id=supplier["id"],
+                    request_id=request_id,
+                    base_price_per_unit=supplier_price,
+                    quantity=request.quantity,
+                    distance_km=0  # Would calculate from coordinates in real app
+                )
+                
+                # Save quote
+                quote = QuoteGeneratorTool.save_quote(quote_data)
+                quotes.append(quote)
+            
+            print(f"Generated {len(quotes)} quotes for request {request_id}")
+            return quotes
+            
+        except Exception as e:
+            print(f"Error generating quotes: {e}")
+            return []
+        finally:
+            session.close()
+
+
+# Test function
+if __name__ == "__main__":
+    """
+    Test the quote generator.
+    """
+    from karigar.tools.supplier_search import SupplierSearchTool
+    import asyncio
+    
+    async def test():
+        # First create a test material request
+        from karigar.schemas.models import MaterialRequest
+        session = get_session()
+        
+        test_request = MaterialRequest(
+            artisan_id="test-artisan-1",
+            material="cement",
+            quantity=10,
+            unit="bags",
+            budget=4000,
+            timeline="3 days"
+        )
+        session.add(test_request)
+        session.commit()
+        request_id = test_request.id
+        session.close()
+        
+        # Search for suppliers
+        search_tool = SupplierSearchTool()
+        suppliers = await search_tool.search(material="cement")
+        
+        # Generate quotes
+        quote_tool = QuoteGeneratorTool()
+        quotes = quote_tool.generate_quotes_for_request(
+            request_id=request_id,
+            suppliers=suppliers
+        )
+        
+        print(f"\nGenerated quotes:")
+        for quote in quotes:
+            print(f"  - Supplier {quote.supplier_id}: ₹{quote.total_price} + ₹{quote.delivery_charge} delivery")
+    
+    asyncio.run(test())
+```
+
+### Tool 3: Payment Tools (UPI, QR Code)
+
+**File:** `src/karigar/tools/payment_tools.py`
+
+```python
+"""
+Tools for payment processing - UPI links, QR codes, etc.
+"""
+
+from urllib.parse import quote
+import qrcode
+from pathlib import Path
+
+
+class PaymentTools:
+    """
+    Handles payment-related operations.
+    """
+    
+    UPLOAD_DIR = Path("./uploads/qr_codes")
+    
+    def __init__(self):
+        """Initialize and create upload directory"""
+        self.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    
+    @staticmethod
+    def generate_upi_link(
+        amount: float,
+        upi_id: str,
+        name: str,
+        note: str
+    ) -> str:
+        """
+        Generate UPI payment deep link.
+        
+        Args:
+            amount: Amount in rupees
+            upi_id: UPI ID of receiver (e.g., merchant@paytm)
+            name: Name of receiver
+            note: Transaction note/description
+            
+        Returns:
+            UPI deep link string
+        """
+        # UPI link format: upi://pay?pa=<UPI_ID>&pn=<NAME>&am=<AMOUNT>&tn=<NOTE>
+        base_url = "upi://pay"
+        params = (
+            f"?pa={upi_id}"
+            f"&pn={quote(name)}"
+            f"&am={amount:.2f}"
+            f"&tn={quote(note)}"
+            f"&cu=INR"
+        )
+        
+        return base_url + params
+    
+    def generate_qr_code(
+        self,
+        upi_link: str,
+        order_id: str
+    ) -> str:
+        """
+        Generate QR code for UPI payment.
+        
+        Args:
+            upi_link: UPI deep link from generate_upi_link()
+            order_id: Order ID for filename
+            
+        Returns:
+            Path to saved QR code image
+        """
+        try:
+            # Create QR code
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=10,
+                border=4,
+            )
+            qr.add_data(upi_link)
+            qr.make(fit=True)
+            
+            # Create image
+            img = qr.make_image(fill_color="black", back_color="white")
+            
+            # Save image
+            filename = f"qr_{order_id}.png"
+            filepath = self.UPLOAD_DIR / filename
+            img.save(filepath)
+            
+            return str(filepath)
+            
+        except Exception as e:
+            print(f"Error generating QR code: {e}")
+            return ""
+    
+    def create_payment_package(
+        self,
+        order_id: str,
+        amount: float,
+        merchant_upi: str = "merchant@paytm",
+        merchant_name: str = "KarigarAgent"
+    ) -> dict:
+        """
+        Create complete payment package with UPI link and QR code.
+        
+        Args:
+            order_id: Order ID
+            amount: Amount to charge
+            merchant_upi: Merchant's UPI ID
+            merchant_name: Merchant's name
+            
+        Returns:
+            Dictionary with upi_link and qr_code_path
+        """
+        # Generate UPI link
+        upi_link = self.generate_upi_link(
+            amount=amount,
+            upi_id=merchant_upi,
+            name=merchant_name,
+            note=f"Order {order_id}"
+        )
+        
+        # Generate QR code
+        qr_path = self.generate_qr_code(upi_link, order_id)
+        
+        return {
+            "upi_link": upi_link,
+            "qr_code_path": qr_path,
+            "amount": amount
+        }
+
+
+# Test function
+if __name__ == "__main__":
+    """
+    Test payment tools.
+    """
+    tool = PaymentTools()
+    
+    # Test UPI link generation
+    upi_link = tool.generate_upi_link(
+        amount=3500.50,
+        upi_id="merchant@paytm",
+        name="BuildMart Delhi",
+        note="Cement Order #12345"
+    )
+    print(f"UPI Link: {upi_link}")
+    
+    # Test full payment package
+    package = tool.create_payment_package(
+        order_id="test-order-123",
+        amount=3500.50
+    )
+    print(f"\nPayment Package:")
+    print(f"  UPI Link: {package['upi_link']}")
+    print(f"  QR Code: {package['qr_code_path']}")
+    print(f"  Amount: ₹{package['amount']}")
+```
+
+**Test it:**
+
+```bash
+python -m src.karigar.tools.payment_tools
+
+# You should see output and a QR code file created in uploads/qr_codes/
+```
+
+### Tool 4: PDF Generator (Purchase Orders)
+
+**File:** `src/karigar/tools/pdf_generator.py`
+
+```python
+"""
+Tool for generating PDF documents (purchase orders, invoices, etc.)
+"""
+
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.pdfgen import canvas
+from reportlab.lib.units import inch
+from pathlib import Path
+from datetime import datetime
+
+
+class PDFGenerator:
+    """
+    Generates PDF documents for orders.
+    """
+    
+    UPLOAD_DIR = Path("./uploads/pdfs")
+    
+    def __init__(self):
+        """Initialize and create upload directory"""
+        self.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    
+    def generate_purchase_order(
+        self,
+        order_data: dict,
+        order_id: str
+    ) -> str:
+        """
+        Generate a purchase order PDF.
+        
+        Args:
+            order_data: Dictionary with order details
+            order_id: Order ID for filename
+            
+        Returns:
+            Path to generated PDF file
+        """
+        try:
+            # Create filename
+            filename = f"PO_{order_id}.pdf"
+            filepath = self.UPLOAD_DIR / filename
+            
+            # Create PDF
+            c = canvas.Canvas(str(filepath), pagesize=letter)
+            width, height = letter
+            
+            # Title
+            c.setFont("Helvetica-Bold", 20)
+            c.drawString(1*inch, height - 1*inch, "PURCHASE ORDER")
+            
+            # Order details
+            c.setFont("Helvetica-Bold", 12)
+            y_position = height - 1.5*inch
+            
+            # PO Number
+            c.drawString(1*inch, y_position, f"PO Number:")
+            c.setFont("Helvetica", 12)
+            c.drawString(2.5*inch, y_position, order_id)
+            y_position -= 0.3*inch
+            
+            # Date
+            c.setFont("Helvetica-Bold", 12)
+            c.drawString(1*inch, y_position, f"Date:")
+            c.setFont("Helvetica", 12)
+            c.drawString(2.5*inch, y_position, datetime.now().strftime("%Y-%m-%d"))
+            y_position -= 0.5*inch
+            
+            # Buyer details
+            c.setFont("Helvetica-Bold", 14)
+            c.drawString(1*inch, y_position, "Buyer Details:")
+            y_position -= 0.3*inch
+            c.setFont("Helvetica", 11)
+            c.drawString(1*inch, y_position, f"Name: {order_data.get('buyer_name', 'N/A')}")
+            y_position -= 0.25*inch
+            c.drawString(1*inch, y_position, f"Phone: {order_data.get('buyer_phone', 'N/A')}")
+            y_position -= 0.25*inch
+            c.drawString(1*inch, y_position, f"Address: {order_data.get('buyer_address', 'N/A')}")
+            y_position -= 0.5*inch
+            
+            # Supplier details
+            c.setFont("Helvetica-Bold", 14)
+            c.drawString(1*inch, y_position, "Supplier Details:")
+            y_position -= 0.3*inch
+            c.setFont("Helvetica", 11)
+            c.drawString(1*inch, y_position, f"Name: {order_data.get('supplier_name', 'N/A')}")
+            y_position -= 0.25*inch
+            c.drawString(1*inch, y_position, f"Phone: {order_data.get('supplier_phone', 'N/A')}")
+            y_position -= 0.5*inch
+            
+            # Order items
+            c.setFont("Helvetica-Bold", 14)
+            c.drawString(1*inch, y_position, "Order Items:")
+            y_position -= 0.3*inch
+            
+            # Table header
+            c.setFont("Helvetica-Bold", 11)
+            c.drawString(1*inch, y_position, "Item")
+            c.drawString(3*inch, y_position, "Quantity")
+            c.drawString(4.5*inch, y_position, "Rate")
+            c.drawString(6*inch, y_position, "Amount")
+            y_position -= 0.05*inch
+            
+            # Line
+            c.line(1*inch, y_position, 7*inch, y_position)
+            y_position -= 0.3*inch
+            
+            # Items
+            c.setFont("Helvetica", 11)
+            items = order_data.get('items', [])
+            for item in items:
+                c.drawString(1*inch, y_position, item.get('name', ''))
+                c.drawString(3*inch, y_position, str(item.get('quantity', '')))
+                c.drawString(4.5*inch, y_position, f"₹{item.get('rate', 0):.2f}")
+                c.drawString(6*inch, y_position, f"₹{item.get('amount', 0):.2f}")
+                y_position -= 0.25*inch
+            
+            # Total
+            y_position -= 0.2*inch
+            c.line(1*inch, y_position, 7*inch, y_position)
+            y_position -= 0.3*inch
+            
+            c.setFont("Helvetica-Bold", 12)
+            c.drawString(5*inch, y_position, "Total:")
+            c.drawString(6*inch, y_position, f"₹{order_data.get('total_amount', 0):.2f}")
+            
+            # Delivery charge
+            y_position -= 0.25*inch
+            c.setFont("Helvetica", 11)
+            c.drawString(5*inch, y_position, "Delivery:")
+            c.drawString(6*inch, y_position, f"₹{order_data.get('delivery_charge', 0):.2f}")
+            
+            # Grand total
+            y_position -= 0.25*inch
+            c.setFont("Helvetica-Bold", 12)
+            c.drawString(5*inch, y_position, "Grand Total:")
+            grand_total = order_data.get('total_amount', 0) + order_data.get('delivery_charge', 0)
+            c.drawString(6*inch, y_position, f"₹{grand_total:.2f}")
+            
+            # Footer
+            c.setFont("Helvetica-Oblique", 9)
+            c.drawString(1*inch, 1*inch, "This is a computer-generated document and does not require a signature.")
+            
+            # Save PDF
+            c.save()
+            
+            print(f"Purchase order generated: {filepath}")
+            return str(filepath)
+            
+        except Exception as e:
+            print(f"Error generating PDF: {e}")
+            return ""
+
+
+# Test function
+if __name__ == "__main__":
+    """
+    Test PDF generation.
+    """
+    generator = PDFGenerator()
+    
+    test_order = {
+        "buyer_name": "Ravi Kumar",
+        "buyer_phone": "9876543210",
+        "buyer_address": "Nehru Nagar, Delhi",
+        "supplier_name": "BuildMart Delhi",
+        "supplier_phone": "9123456780",
+        "items": [
+            {
+                "name": "Cement (50kg bag)",
+                "quantity": 10,
+                "rate": 350.00,
+                "amount": 3500.00
+            }
+        ],
+        "total_amount": 3500.00,
+        "delivery_charge": 200.00
+    }
+    
+    pdf_path = generator.generate_purchase_order(test_order, "TEST-001")
+    print(f"\nGenerated PDF at: {pdf_path}")
+```
+
+**Test it:**
+
+```bash
+python -m src.karigar.tools.pdf_generator
+
+# Open the generated PDF in uploads/pdfs/
+```
+
+---
+
+## **PART 4: BUILDING AGENTS (60 minutes)**
+
+Now we build the agents that USE these tools.
+
+### Agent 1: IntakeAgent
+
+**File:** `src/karigar/schemas/state.py` (Create this first)
+
+```python
+"""
+LangGraph state definition for the workflow.
+This is the data structure that flows between agents.
+"""
+
+from typing import TypedDict, List, Optional, Annotated
+from langgraph.graph.message import add_messages
+
+
+class KarigarState(TypedDict):
+    """
+    State that flows through the agent workflow.
+    Each agent reads from and writes to this state.
+    """
+    # Conversation messages
+    messages: Annotated[list, add_messages]
+    
+    # User/artisan info
+    artisan_id: str
+    artisan_name: Optional[str]
+    artisan_phone: Optional[str]
+    artisan_location: Optional[str]
+    
+    # Material request details
+    material_request: Optional[dict]  # Created by IntakeAgent
+    request_id: Optional[str]
+    
+    # Supplier quotes
+    supplier_quotes: List[dict]  # Created by SupplierAgent
+    selected_quote: Optional[dict]  # Selected by CommitAgent
+    
+    # Order details
+    order_id: Optional[str]  # Created by CommitAgent
+    order_details: Optional[dict]
+    payment_info: Optional[dict]
+    po_path: Optional[str]
+    
+    # Store details
+    store_url: Optional[str]  # Created by SalesAgent
+    store_id: Optional[str]
+    
+    # Status tracking
+    status: str  # workflow status
+    error: Optional[str]  # error message if any
+```
+
+Now the agent:
+
+**File:** `src/karigar/agents/intake_agent.py`
+
+```python
+"""
+IntakeAgent: Parses user input and extracts structured material request data.
+This is the FIRST agent in the workflow.
+"""
+
+from karigar.schemas.state import KarigarState
+from langchain_openai import ChatOpenAI
+from karigar.memory.sql_memory import get_session
+from karigar.schemas.models import MaterialRequest, Artisan
+import json
+import os
+
+
+class IntakeAgent:
+    """
+    Processes raw user input and creates structured material requests.
+    """
+    
+    def __init__(self):
+        """Initialize the agent with an LLM"""
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise ValueError("OPENAI_API_KEY not found in environment")
+        
+        self.llm = ChatOpenAI(
+            model="gpt-4",
+            temperature=0,  # Deterministic for data extraction
+            api_key=api_key
+        )
+    
+    def process(self, state: KarigarState) -> dict:
+        """
+        Process the state and extract material request.
+        
+        Args:
+            state: Current workflow state
+            
+        Returns:
+            Dictionary with updates to state
+        """
+        try:
+            # Get the last user message
+            user_input = state["messages"][-1].content if state["messages"] else ""
+            
+            print(f"\n[IntakeAgent] Processing input: {user_input}")
+            
+            # Create prompt for LLM to extract structured data
+            prompt = f"""
+            You are a material request extraction assistant. 
+            Extract structured information from the following request:
+            
+            "{user_input}"
+            
+            Extract:
+            1. material (type of material needed, e.g., cement, bricks, steel)
+            2. quantity (numeric value)
+            3. unit (e.g., kg, bags, pieces, tons)
+            4. budget (numeric value in rupees, if mentioned)
+            5. timeline (when needed, e.g., "3 days", "next week")
+            6. location (city or area, if mentioned)
+            
+            Return ONLY a JSON object with these fields. If any field is not mentioned, use null.
+            Example: {{"material": "cement", "quantity": 100, "unit": "kg", "budget": 5000, "timeline": "3 days", "location": "Delhi"}}
+            
+            JSON:
+            """
+            
+            # Call LLM
+            response = self.llm.invoke(prompt)
+            response_text = response.content.strip()
+            
+            print(f"[IntakeAgent] LLM response: {response_text}")
+            
+            # Parse JSON response
+            try:
+                # Remove markdown code blocks if present
+                if "```json" in response_text:
+                    response_text = response_text.split("```json")[1].split("```")[0]
+                elif "```" in response_text:
+                    response_text = response_text.split("```")[1].split("```")[0]
+                
+                material_data = json.loads(response_text.strip())
+            except json.JSONDecodeError as e:
+                print(f"[IntakeAgent] JSON parse error: {e}")
+                return {
+                    "status": "error",
+                    "error": "Failed to parse material request"
+                }
+            
+            # Validate required fields
+            if not material_data.get("material"):
+                return {
+                    "status": "error",
+                    "error": "Material type not specified"
+                }
+            
+            if not material_data.get("quantity"):
+                return {
+                    "status": "error",
+                    "error": "Quantity not specified"
+                }
+            
+            # Save to database
+            session = get_session()
+            try:
+                # Get or create artisan
+                artisan_id = state.get("artisan_id")
+                if not artisan_id:
+                    # For MVP, use phone as ID
+                    artisan_id = state.get("artisan_phone", "default-artisan")
+                
+                artisan = session.query(Artisan).filter_by(id=artisan_id).first()
+                if not artisan:
+                    artisan = Artisan(
+                        id=artisan_id,
+                        name=state.get("artisan_name", "Unknown"),
+                        phone=state.get("artisan_phone", "0000000000"),
+                        location=material_data.get("location") or state.get("artisan_location")
+                    )
+                    session.add(artisan)
+                    session.commit()
+                
+                # Create material request
+                material_request = MaterialRequest(
+                    artisan_id=artisan_id,
+                    material=material_data["material"].lower(),
+                    quantity=float(material_data["quantity"]),
+                    unit=material_data.get("unit", "kg"),
+                    budget=float(material_data["budget"]) if material_data.get("budget") else 0,
+                    timeline=material_data.get("timeline", "ASAP"),
+                    status="pending"
+                )
+                
+                session.add(material_request)
+                session.commit()
+                session.refresh(material_request)
+                
+                request_id = material_request.id
+                
+                print(f"[IntakeAgent] Created request {request_id} for {material_data['material']}")
+                
+                # Return state updates
+                return {
+                    "material_request": material_data,
+                    "request_id": request_id,
+                    "artisan_id": artisan_id,
+                    "status": "intake_complete"
+                }
+                
+            except Exception as e:
+                session.rollback()
+                print(f"[IntakeAgent] Database error: {e}")
+                return {
+                    "status": "error",
+                    "error": f"Database error: {str(e)}"
+                }
+            finally:
+                session.close()
+                
+        except Exception as e:
+            print(f"[IntakeAgent] Error: {e}")
+            return {
+                "status": "error",
+                "error": str(e)
+            }
+
+
+# Test function
+if __name__ == "__main__":
+    """
+    Test the intake agent.
+    """
+    agent = IntakeAgent()
+    
+    test_state = {
+        "messages": [
+            {"role": "user", "content": "I need 50 kg of cement in Delhi by next week, my budget is 2000 rupees"}
+        ],
+        "artisan_id": "test-artisan-1",
+        "artisan_name": "Test Artisan",
+        "artisan_phone": "9999999999",
+        "status": "started"
+    }
+    
+    result = agent.process(test_state)
+    print(f"\n[Test] Result: {json.dumps(result, indent=2)}")
+```
+
+**Test it:**
+
+```bash
+# Make sure your .env has OPENAI_API_KEY set
+python -m src.karigar.agents.intake_agent
+
+# You should see the agent extract structured data
+```
+
+I'll continue with the remaining agents in the next response. This is getting long but I want to ensure every detail is crystal clear.
+
+Would you like me to continue with the remaining agents (SupplierAgent, CommitAgent, SalesAgent, CashAgent) and then the orchestrator that wires them all together?

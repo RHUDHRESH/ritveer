@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Check System - System Monitoring Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            color: white;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .status-banner {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .status-badge.green {
+            background-color: #10b981;
+            color: white;
+        }
+
+        .status-badge.yellow {
+            background-color: #f59e0b;
+            color: white;
+        }
+
+        .status-badge.red {
+            background-color: #ef4444;
+            color: white;
+        }
+
+        .status-badge.unknown {
+            background-color: #6b7280;
+            color: white;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background: #667eea;
+            color: white;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #764ba2;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+
+        .card-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .card-status {
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .card-status.healthy {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .card-status.degraded {
+            background: #fed7aa;
+            color: #92400e;
+        }
+
+        .card-status.critical {
+            background: #fee2e2;
+            color: #7f1d1d;
+        }
+
+        .card-status.unknown {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .card-content {
+            color: #666;
+            line-height: 1.8;
+        }
+
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .metric-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .metric-value {
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 5px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #667eea;
+            transition: width 0.3s;
+        }
+
+        .progress-fill.warning {
+            background: #f59e0b;
+        }
+
+        .progress-fill.danger {
+            background: #ef4444;
+        }
+
+        .models-list {
+            list-style: none;
+            padding: 10px 0;
+        }
+
+        .models-list li {
+            padding: 8px;
+            background: #f9fafb;
+            margin: 5px 0;
+            border-radius: 5px;
+            font-size: 0.9em;
+            border-left: 3px solid #667eea;
+        }
+
+        .issues-list {
+            list-style: none;
+            padding: 10px 0;
+        }
+
+        .issues-list li {
+            padding: 8px;
+            background: #fee2e2;
+            margin: 5px 0;
+            border-radius: 5px;
+            font-size: 0.9em;
+            border-left: 3px solid #ef4444;
+            color: #7f1d1d;
+        }
+
+        .history-section {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+        }
+
+        .history-section h2 {
+            margin-bottom: 20px;
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .history-table th {
+            background: #f9fafb;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .history-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .history-table tr:hover {
+            background: #f9fafb;
+        }
+
+        .status-icon {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-icon.green {
+            background: #10b981;
+        }
+
+        .status-icon.yellow {
+            background: #f59e0b;
+        }
+
+        .status-icon.red {
+            background: #ef4444;
+        }
+
+        .refresh-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #10b981;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .timestamp {
+            font-size: 0.85em;
+            color: #999;
+            margin-top: 10px;
+        }
+
+        .error-message {
+            background: #fee2e2;
+            color: #7f1d1d;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #ef4444;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .status-banner {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            header h1 {
+                font-size: 1.8em;
+            }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>✈️ Flight Check System</h1>
+            <p>Comprehensive System Monitoring & Health Dashboard</p>
+        </header>
+
+        <div class="status-banner">
+            <div>
+                <div style="margin-bottom: 10px;">
+                    <span class="refresh-indicator"></span>
+                    System Status: <span class="status-badge" id="overallStatus">INITIALIZING</span>
+                </div>
+                <div id="statusTime" class="timestamp">Checking systems...</div>
+            </div>
+            <div class="controls">
+                <button onclick="performFlightCheck()" id="checkBtn">🔍 Run Flight Check</button>
+                <button onclick="refreshDashboard()" id="refreshBtn">🔄 Refresh</button>
+            </div>
+        </div>
+
+        <!-- System Status Cards -->
+        <div class="grid" id="systemCards">
+            <div class="card">
+                <div style="text-align: center; padding: 40px;">
+                    <div class="loading"></div>
+                    <p style="margin-top: 15px; color: #666;">Loading system status...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Section -->
+        <div class="history-section">
+            <h2>📊 Flight Check History</h2>
+            <div style="overflow-x: auto;">
+                <table class="history-table" id="historyTable">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Ollama</th>
+                            <th>Flask</th>
+                            <th>Resources</th>
+                            <th>Database</th>
+                            <th>Network</th>
+                            <th>Overall</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody">
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 40px;">Loading history...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const autoRefreshInterval = 60000; // 60 seconds
+        let autoRefreshTimer;
+
+        function getStatusColor(status) {
+            switch(status) {
+                case 'HEALTHY': return 'green';
+                case 'DEGRADED': return 'yellow';
+                case 'CRITICAL': return 'red';
+                default: return 'unknown';
+            }
+        }
+
+        function getStatusIcon(status) {
+            switch(status) {
+                case 'HEALTHY': return '✅';
+                case 'DEGRADED': return '⚠️';
+                case 'CRITICAL': return '❌';
+                default: return '❓';
+            }
+        }
+
+        function formatTime(isoTime) {
+            const date = new Date(isoTime);
+            return date.toLocaleTimeString() + ' ' + date.toLocaleDateString();
+        }
+
+        async function performFlightCheck() {
+            const btn = document.getElementById('checkBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Running...';
+
+            try {
+                const response = await fetch('/api/perform-flight-check', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    displayFlightCheck(data.data);
+                    await loadHistory();
+                }
+            } catch (error) {
+                console.error('Flight check error:', error);
+                alert('Flight check failed: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔍 Run Flight Check';
+            }
+        }
+
+        async function loadFlightCheck() {
+            try {
+                const response = await fetch('/api/flight-check');
+                const data = await response.json();
+
+                if (data.success && data.data) {
+                    displayFlightCheck(data.data);
+                }
+            } catch (error) {
+                console.error('Load flight check error:', error);
+            }
+        }
+
+        function displayFlightCheck(checkData) {
+            const container = document.getElementById('systemCards');
+            container.innerHTML = '';
+
+            const systems = checkData.systems;
+            const overallStatus = checkData.overall_status;
+
+            // Update overall status
+            const statusBadge = document.getElementById('overallStatus');
+            statusBadge.className = 'status-badge ' + getStatusColor(overallStatus).toLowerCase();
+            statusBadge.textContent = overallStatus;
+
+            // Update timestamp
+            document.getElementById('statusTime').innerHTML = `
+                <span class="refresh-indicator"></span>
+                Last check: ${formatTime(checkData.timestamp)}
+            `;
+
+            // Create cards for each system
+            for (const [key, system] of Object.entries(systems)) {
+                const card = createSystemCard(key, system);
+                container.appendChild(card);
+            }
+        }
+
+        function createSystemCard(systemKey, systemData) {
+            const card = document.createElement('div');
+            card.className = 'card';
+
+            const statusColor = getStatusColor(systemData.status);
+            const statusIcon = getStatusIcon(systemData.status);
+
+            let contentHTML = `
+                <div class="card-header">
+                    <div class="card-title">${systemData.service || systemKey}</div>
+                    <span class="card-status ${systemData.status.toLowerCase()}">${statusIcon} ${systemData.status}</span>
+                </div>
+                <div class="card-content">
+            `;
+
+            // System-specific content
+            switch(systemKey) {
+                case 'ollama':
+                    contentHTML += `
+                        <div class="metric">
+                            <span class="metric-label">Service Status:</span>
+                            <span class="metric-value">${systemData.status}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Response Time:</span>
+                            <span class="metric-value">${systemData.response_time_ms || 'N/A'}ms</span>
+                        </div>
+                        ${systemData.models_available ? `
+                            <div class="metric">
+                                <span class="metric-label">Models Available:</span>
+                                <span class="metric-value">${systemData.models_available}</span>
+                            </div>
+                            <ul class="models-list">
+                                ${(systemData.models || []).map(m => `<li>🤖 ${m}</li>`).join('')}
+                            </ul>
+                        ` : ''}
+                        ${systemData.error ? `<div class="error-message">${systemData.error}</div>` : ''}
+                        ${systemData.message ? `<p style="margin-top: 10px; color: #666;">${systemData.message}</p>` : ''}
+                    `;
+                    break;
+
+                case 'flask':
+                    contentHTML += `
+                        <div class="metric">
+                            <span class="metric-label">Service Status:</span>
+                            <span class="metric-value">${systemData.status}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Port:</span>
+                            <span class="metric-value">${systemData.port}</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Response Time:</span>
+                            <span class="metric-value">${systemData.response_time_ms || 'N/A'}ms</span>
+                        </div>
+                        ${systemData.error ? `<div class="error-message">${systemData.error}</div>` : ''}
+                        ${systemData.message ? `<p style="margin-top: 10px; color: #666;">${systemData.message}</p>` : ''}
+                    `;
+                    break;
+
+                case 'resources':
+                    const cpuPercent = systemData.cpu?.percent || 0;
+                    const memPercent = systemData.memory?.percent || 0;
+                    const diskPercent = systemData.disk?.percent || 0;
+
+                    contentHTML += `
+                        <div class="metric">
+                            <span class="metric-label">CPU Usage</span>
+                            <span class="metric-value">${cpuPercent.toFixed(1)}%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill ${cpuPercent > 80 ? 'danger' : cpuPercent > 60 ? 'warning' : ''}"
+                                 style="width: ${cpuPercent}%"></div>
+                        </div>
+
+                        <div class="metric">
+                            <span class="metric-label">Memory Usage</span>
+                            <span class="metric-value">${memPercent.toFixed(1)}%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill ${memPercent > 85 ? 'danger' : memPercent > 70 ? 'warning' : ''}"
+                                 style="width: ${memPercent}%"></div>
+                        </div>
+                        <div style="font-size: 0.85em; color: #666;">
+                            ${(systemData.memory?.used_gb || 0).toFixed(2)}GB / ${(systemData.memory?.total_gb || 0).toFixed(2)}GB
+                        </div>
+
+                        <div class="metric">
+                            <span class="metric-label">Disk Usage</span>
+                            <span class="metric-value">${diskPercent.toFixed(1)}%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill ${diskPercent > 90 ? 'danger' : diskPercent > 75 ? 'warning' : ''}"
+                                 style="width: ${diskPercent}%"></div>
+                        </div>
+                        <div style="font-size: 0.85em; color: #666;">
+                            ${(systemData.disk?.free_gb || 0).toFixed(2)}GB free / ${(systemData.disk?.total_gb || 0).toFixed(2)}GB total
+                        </div>
+
+                        ${systemData.issues && systemData.issues.length > 0 ? `
+                            <ul class="issues-list">
+                                ${systemData.issues.map(issue => `<li>⚠️ ${issue}</li>`).join('')}
+                            </ul>
+                        ` : ''}
+                    `;
+                    break;
+
+                case 'database':
+                    contentHTML += `
+                        <div class="metric">
+                            <span class="metric-label">Database:</span>
+                            <span class="metric-value">${systemData.database}</span>
+                        </div>
+                        ${systemData.tables ? `
+                            <div class="metric">
+                                <span class="metric-label">Flight Checks:</span>
+                                <span class="metric-value">${systemData.tables.flight_checks}</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Alerts:</span>
+                                <span class="metric-value">${systemData.tables.system_alerts}</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Metrics:</span>
+                                <span class="metric-value">${systemData.tables.system_metrics}</span>
+                            </div>
+                        ` : ''}
+                        ${systemData.error ? `<div class="error-message">${systemData.error}</div>` : ''}
+                        ${systemData.message ? `<p style="margin-top: 10px; color: #666;">${systemData.message}</p>` : ''}
+                    `;
+                    break;
+
+                case 'network':
+                    contentHTML += `
+                        <div class="metric">
+                            <span class="metric-label">Localhost:</span>
+                            <span class="metric-value" style="color: ${systemData.localhost === 'ONLINE' ? '#10b981' : '#ef4444'}">
+                                ${systemData.localhost === 'ONLINE' ? '✅' : '❌'} ${systemData.localhost}
+                            </span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Internet:</span>
+                            <span class="metric-value" style="color: ${systemData.internet === 'ONLINE' ? '#10b981' : '#ef4444'}">
+                                ${systemData.internet === 'ONLINE' ? '✅' : '❌'} ${systemData.internet}
+                            </span>
+                        </div>
+                        ${systemData.message ? `<p style="margin-top: 10px; color: #666;">${systemData.message}</p>` : ''}
+                    `;
+                    break;
+
+                default:
+                    contentHTML += `<pre>${JSON.stringify(systemData, null, 2)}</pre>`;
+            }
+
+            contentHTML += '</div>';
+            card.innerHTML = contentHTML;
+            return card;
+        }
+
+        async function loadHistory() {
+            try {
+                const response = await fetch('/api/flight-check-history?limit=20');
+                const data = await response.json();
+
+                if (data.success && data.data && data.data.length > 0) {
+                    displayHistory(data.data);
+                }
+            } catch (error) {
+                console.error('Load history error:', error);
+            }
+        }
+
+        function displayHistory(historyData) {
+            const tbody = document.getElementById('historyBody');
+            tbody.innerHTML = '';
+
+            historyData.reverse().forEach(check => {
+                const row = document.createElement('tr');
+                const systems = check.systems;
+
+                const getStatusCell = (systemKey) => {
+                    const system = systems[systemKey];
+                    if (!system) return '<span class="status-icon unknown"></span>—';
+                    const color = getStatusColor(system.status);
+                    return `<span class="status-icon ${color}"></span>${system.status}`;
+                };
+
+                row.innerHTML = `
+                    <td>${formatTime(check.timestamp).split(' ')[0]}</td>
+                    <td>${getStatusCell('ollama')}</td>
+                    <td>${getStatusCell('flask')}</td>
+                    <td>${getStatusCell('resources')}</td>
+                    <td>${getStatusCell('database')}</td>
+                    <td>${getStatusCell('network')}</td>
+                    <td><strong>${check.overall_status}</strong></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function refreshDashboard() {
+            loadFlightCheck();
+            loadHistory();
+        }
+
+        function setupAutoRefresh() {
+            clearInterval(autoRefreshTimer);
+            autoRefreshTimer = setInterval(() => {
+                refreshDashboard();
+            }, autoRefreshInterval);
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', () => {
+            loadFlightCheck();
+            loadHistory();
+            setupAutoRefresh();
+        });
+
+        // Refresh on page visibility change
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                refreshDashboard();
+                setupAutoRefresh();
+            }
+        });
+    </script>
+</body>
+</html>

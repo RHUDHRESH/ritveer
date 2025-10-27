@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArtisanHub - Business Insights Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            font-size: 2.8em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        header p {
+            font-size: 1.2em;
+            opacity: 0.95;
+        }
+
+        .input-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .input-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 15px;
+            align-items: flex-end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: inherit;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #2a5298;
+            box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.1);
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .btn-primary {
+            padding: 12px 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .insights-container {
+            display: none;
+        }
+
+        .insight-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card-title {
+            font-size: 1.8em;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #1e3c72;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        /* Key Insights Section */
+        .key-insights {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .insight-item {
+            background: linear-gradient(135deg, #f5f7ff 0%, #fff0f5 100%);
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            font-size: 1em;
+            line-height: 1.6;
+        }
+
+        /* Opportunities Section */
+        .opportunities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .opportunity-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s;
+        }
+
+        .opportunity-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+        }
+
+        .opp-name {
+            font-size: 1.3em;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .opp-stat {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .opp-stat-label {
+            opacity: 0.9;
+        }
+
+        .opp-stat-value {
+            font-weight: 700;
+            font-size: 1.1em;
+        }
+
+        .opp-steps {
+            margin-top: 15px;
+            font-size: 0.95em;
+        }
+
+        .step {
+            padding: 8px 0;
+            margin: 5px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .step:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+
+        /* Pricing Section */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .pricing-card {
+            background: #f9fafb;
+            border: 2px solid #e0e0e0;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .pricing-segment {
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .pricing-amount {
+            font-size: 2em;
+            font-weight: 700;
+            color: #1e3c72;
+            margin: 10px 0;
+        }
+
+        .pricing-detail {
+            font-size: 0.9em;
+            color: #666;
+            margin: 8px 0;
+        }
+
+        /* Roadmap Section */
+        .roadmap {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 1024px) {
+            .roadmap {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .roadmap {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .roadmap-item {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .roadmap-period {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .roadmap-focus {
+            font-size: 1.1em;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .roadmap-target {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: 600;
+            margin: 10px 0;
+        }
+
+        .roadmap-actions {
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+
+        .roadmap-action {
+            padding: 4px 0;
+            padding-left: 15px;
+            position: relative;
+        }
+
+        .roadmap-action:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+
+        /* Action Plan Section */
+        .action-list {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .action-item {
+            padding: 15px;
+            margin: 10px 0;
+            background: white;
+            border-left: 4px solid #667eea;
+            border-radius: 4px;
+        }
+
+        .action-title {
+            font-weight: 700;
+            color: #1e3c72;
+            margin-bottom: 8px;
+        }
+
+        .action-detail {
+            display: grid;
+            grid-template-columns: auto auto auto;
+            gap: 20px;
+            font-size: 0.95em;
+            margin-top: 8px;
+        }
+
+        .action-detail-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .action-detail-label {
+            font-weight: 600;
+            color: #666;
+        }
+
+        .action-detail-value {
+            color: #1e3c72;
+            font-weight: 700;
+        }
+
+        /* Risks Section */
+        .risks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .risk-card {
+            background: #fff5f5;
+            border: 2px solid #fecaca;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .risk-title {
+            font-weight: 700;
+            color: #c53030;
+            margin-bottom: 10px;
+        }
+
+        .probability {
+            padding: 8px;
+            margin: 8px 0;
+            background: #fecaca;
+            border-radius: 4px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .impact {
+            padding: 8px;
+            margin: 8px 0;
+            background: #fed7d7;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        .mitigation {
+            padding: 8px;
+            margin: 8px 0;
+            background: #e6fffa;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+
+        /* Revenue Section */
+        .revenue-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .revenue-card {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+        }
+
+        .revenue-label {
+            font-size: 0.95em;
+            opacity: 0.95;
+            margin-bottom: 10px;
+        }
+
+        .revenue-amount {
+            font-size: 2.2em;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+
+        .revenue-timeline {
+            font-size: 0.85em;
+            opacity: 0.9;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: white;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 20px;
+            font-size: 1.2em;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #c53030;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #c53030;
+            margin: 20px 0;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .input-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .opportunities-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .roadmap {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💡 ArtisanHub Business Insights</h1>
+            <p>AI-Powered Analysis with Real Action Steps & Revenue Projections</p>
+        </header>
+
+        <div class="input-section">
+            <div class="input-grid">
+                <div class="form-group">
+                    <label for="description">Describe Your Craft Work</label>
+                    <textarea id="description" placeholder="What do you create? Materials, techniques, experience level..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="location">Your Location</label>
+                    <input type="text" id="location" placeholder="City, State...">
+                </div>
+
+                <button class="btn-primary" onclick="generateInsights()" id="analyzeBtn">
+                    🚀 Generate Insights
+                </button>
+            </div>
+
+            <div class="error" id="errorDiv"></div>
+        </div>
+
+        <div id="loadingDiv" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <div class="loading-text">Analyzing your business potential...</div>
+        </div>
+
+        <div id="insightsContainer" class="insights-container">
+            <!-- Key Insights -->
+            <div class="insight-card">
+                <div class="card-title">✨ Key Business Insights</div>
+                <div class="key-insights" id="keyInsights"></div>
+            </div>
+
+            <!-- Market Opportunities -->
+            <div class="insight-card">
+                <div class="card-title">🎯 Market Opportunities (with Revenue Potential)</div>
+                <div class="opportunities-grid" id="opportunities"></div>
+            </div>
+
+            <!-- Pricing Strategy -->
+            <div class="insight-card">
+                <div class="card-title">💰 Pricing Strategy</div>
+                <div id="pricingStrategy"></div>
+                <div class="pricing-grid" id="pricingTiers"></div>
+            </div>
+
+            <!-- 12-Month Roadmap -->
+            <div class="insight-card">
+                <div class="card-title">📈 12-Month Growth Roadmap</div>
+                <div class="roadmap" id="roadmap"></div>
+            </div>
+
+            <!-- Revenue Projections -->
+            <div class="insight-card">
+                <div class="card-title">💹 Revenue Projections</div>
+                <div class="revenue-stats" id="revenue"></div>
+            </div>
+
+            <!-- Action Plan -->
+            <div class="insight-card">
+                <div class="card-title">✅ 90-Day Action Plan</div>
+                <div class="action-list" id="actionPlan"></div>
+            </div>
+
+            <!-- Risk Analysis -->
+            <div class="insight-card">
+                <div class="card-title">⚠️ Risk Analysis & Mitigation</div>
+                <div class="risks-grid" id="risks"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '';
+
+        async function generateInsights() {
+            const description = document.getElementById('description').value.trim();
+            const location = document.getElementById('location').value.trim();
+
+            if (!description || description.length < 20) {
+                showError('Please describe your craft work in at least 20 characters');
+                return;
+            }
+
+            showLoading(true);
+            hideError();
+
+            try {
+                const response = await fetch(`${API_BASE}/api/generate-insights`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ description, location })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    displayInsights(data.insights);
+                } else {
+                    showError(data.error || 'Failed to generate insights');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Connection error: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function displayInsights(insights) {
+            // Key insights
+            const keyInsightsHtml = insights.key_insights.map(insight =>
+                `<div class="insight-item">${insight}</div>`
+            ).join('');
+            document.getElementById('keyInsights').innerHTML = keyInsightsHtml;
+
+            // Opportunities
+            const oppsHtml = (insights.market_opportunities.opportunities || []).map(opp => `
+                <div class="opportunity-card">
+                    <div class="opp-name">${opp.name}</div>
+                    <div class="opp-stat">
+                        <span class="opp-stat-label">Revenue Potential:</span>
+                        <span class="opp-stat-value">${opp.monthly_revenue_potential}</span>
+                    </div>
+                    <div class="opp-stat">
+                        <span class="opp-stat-label">Units/Month:</span>
+                        <span class="opp-stat-value">${opp.monthly_potential_units}</span>
+                    </div>
+                    <div class="opp-stat">
+                        <span class="opp-stat-label">Launch Timeline:</span>
+                        <span class="opp-stat-value">${opp.timeline_to_launch}</span>
+                    </div>
+                    <div class="opp-stat">
+                        <span class="opp-stat-label">Startup Cost:</span>
+                        <span class="opp-stat-value">${opp.startup_cost}</span>
+                    </div>
+                    <div class="opp-steps">
+                        <strong>Implementation:</strong>
+                        ${(opp.implementation_steps || []).map(step => `<div class="step">${step}</div>`).join('')}
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('opportunities').innerHTML = oppsHtml;
+
+            // Pricing
+            const pricing = insights.pricing_strategy;
+            document.getElementById('pricingStrategy').innerHTML = `
+                <p><strong>Strategy:</strong> ${pricing.pricing_strategy}</p>
+                <p><strong>Recommended Base Price:</strong> ${pricing.recommended_base_price}</p>
+                <p><strong>Markup Reasoning:</strong> ${pricing.markup_reasoning}</p>
+            `;
+
+            const pricingTiersHtml = (pricing.pricing_tiers || []).map(tier => `
+                <div class="pricing-card">
+                    <div class="pricing-segment">${tier.segment.toUpperCase()}</div>
+                    <div class="pricing-amount">${tier.price_per_unit}</div>
+                    <div class="pricing-detail">Profit Margin: ${tier.profit_margin}</div>
+                    <div class="pricing-detail">Target: ${tier.target_volume}</div>
+                </div>
+            `).join('');
+            document.getElementById('pricingTiers').innerHTML = pricingTiersHtml;
+
+            // Roadmap
+            const roadmap = insights.growth_roadmap;
+            const roadmapHtml = [
+                { label: 'Month 1-3', data: roadmap.month_1_3 },
+                { label: 'Month 4-6', data: roadmap.month_4_6 },
+                { label: 'Month 7-9', data: roadmap.month_7_9 },
+                { label: 'Month 10-12', data: roadmap.month_10_12 }
+            ].map(phase => `
+                <div class="roadmap-item">
+                    <div class="roadmap-period">${phase.label}</div>
+                    <div class="roadmap-focus">🎯 ${phase.data.focus}</div>
+                    <div class="roadmap-target">Target: ${phase.data.revenue_target}</div>
+                    <div class="roadmap-actions">
+                        ${(phase.data.actions || []).map(action => `<div class="roadmap-action">${action}</div>`).join('')}
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('roadmap').innerHTML = roadmapHtml;
+
+            // Revenue
+            const rev = insights.revenue_projections;
+            const revenueHtml = `
+                <div class="revenue-card">
+                    <div class="revenue-label">Current Monthly</div>
+                    <div class="revenue-amount">${rev.current_monthly_revenue}</div>
+                </div>
+                <div class="revenue-card">
+                    <div class="revenue-label">Projected Month 6</div>
+                    <div class="revenue-amount">${rev.projected_monthly_revenue_month_6}</div>
+                </div>
+                <div class="revenue-card">
+                    <div class="revenue-label">Year 1 Total</div>
+                    <div class="revenue-amount">${rev.projected_annual_revenue_year_1}</div>
+                </div>
+            `;
+            document.getElementById('revenue').innerHTML = revenueHtml;
+
+            // Action Plan
+            const actionPlan = insights.action_plan;
+            const actionHtml = `
+                <h3 style="margin: 20px 0 15px; color: #1e3c72;">Immediate Actions (This Week)</h3>
+                ${(actionPlan.immediate_actions || []).map(action => `
+                    <div class="action-item">
+                        <div class="action-title">${action.action}</div>
+                        <div class="action-detail">
+                            <div class="action-detail-item">
+                                <span class="action-detail-label">Timeline:</span>
+                                <span class="action-detail-value">${action.timeline}</span>
+                            </div>
+                            <div class="action-detail-item">
+                                <span class="action-detail-label">Impact:</span>
+                                <span class="action-detail-value">${action.impact}</span>
+                            </div>
+                            <div class="action-detail-item">
+                                <span class="action-detail-label">Cost:</span>
+                                <span class="action-detail-value">${action.cost}</span>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+
+                <h3 style="margin: 20px 0 15px; color: #1e3c72;">Next 30 Days</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px;">
+                    ${(actionPlan.next_30_days || []).map(action =>
+                        `<div style="padding: 10px; background: #f0f9ff; border-radius: 4px;">✓ ${action}</div>`
+                    ).join('')}
+                </div>
+
+                <h3 style="margin: 20px 0 15px; color: #1e3c72;">Next 90 Days</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px;">
+                    ${(actionPlan.next_90_days || []).map(action =>
+                        `<div style="padding: 10px; background: #f0f9ff; border-radius: 4px;">✓ ${action}</div>`
+                    ).join('')}
+                </div>
+
+                <h3 style="margin: 20px 0 15px; color: #1e3c72;">Year 1 Goals</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px;">
+                    ${(actionPlan.year_1_goals || []).map(goal =>
+                        `<div style="padding: 10px; background: #f0f9ff; border-radius: 4px;">🎯 ${goal}</div>`
+                    ).join('')}
+                </div>
+            `;
+            document.getElementById('actionPlan').innerHTML = actionHtml;
+
+            // Risks
+            const risksHtml = (insights.risk_analysis.risks || []).map(risk => `
+                <div class="risk-card">
+                    <div class="risk-title">⚠️ ${risk.risk}</div>
+                    <div class="probability">Probability: <strong>${risk.probability}</strong></div>
+                    <div class="impact"><strong>Impact:</strong> ${risk.impact}</div>
+                    <div class="mitigation"><strong>Mitigation:</strong> ${risk.mitigation}</div>
+                </div>
+            `).join('');
+            document.getElementById('risks').innerHTML = risksHtml;
+
+            document.getElementById('insightsContainer').style.display = 'block';
+            window.scrollTo(0, document.getElementById('insightsContainer').offsetTop - 100);
+        }
+
+        function showLoading(show) {
+            document.getElementById('loadingDiv').style.display = show ? 'block' : 'none';
+            document.getElementById('analyzeBtn').disabled = show;
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorDiv');
+            errorDiv.textContent = '❌ ' + message;
+            errorDiv.style.display = 'block';
+        }
+
+        function hideError() {
+            document.getElementById('errorDiv').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

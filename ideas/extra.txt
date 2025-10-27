@@ -1,0 +1,699 @@
+PHASE 8: Maps & Location Services (HIGH PRIORITY)
+8.1 Map Integration Architecture
+Technology Stack:
+
+Frontend: Leaflet.js (open-source, no API fees) or Mapbox GL (better UX, freemium)
+Geocoding: OpenStreetMap Nominatim (free) or Mapbox Geocoding API
+Routing: OSRM (Open Source Routing Machine) - completely free
+Alternative: Google Maps API (has free tier, familiar UX)
+
+8.2 Map Features Checklist
+Core Map Features:
+
+ Artisan Location Pin - Show artisan's workshop/home on map
+ Supplier Proximity Search - Find nearest suppliers with radius filter
+ Delivery Zone Visualization - Show supplier delivery areas as polygons
+ Route Planning - Optimal route from supplier to artisan
+ Live Delivery Tracking - Real-time courier location (if using delivery service)
+ Geofencing - Trigger notifications when delivery enters zone
+ Heatmap - Show popular supplier clusters, busy areas
+ Distance Calculator - Auto-calculate delivery charges based on distance
+
+Map-Based Interactions:
+
+ Tap supplier pin → See details, inventory, ratings
+ Tap artisan pin → See their micro-stores, past orders
+ Draw custom delivery zone (for suppliers to set coverage area)
+ Street view integration (for verifying addresses)
+ Satellite view toggle (for rural areas)
+
+8.3 Implementation Files
+File: src/karigar/tools/location_tools.py
+pythonimport httpx
+from typing import Tuple, List, Optional
+from geopy.distance import geodesic
+
+class LocationTools:
+    """All location/map related utilities"""
+    
+    @staticmethod
+    async def geocode_address(address: str) -> Tuple[float, float]:
+        """Convert address to lat/lng using Nominatim"""
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                "https://nominatim.openstreetmap.org/search",
+                params={
+                    "q": address,
+                    "format": "json",
+                    "limit": 1
+                },
+                headers={"User-Agent": "KarigarApp/1.0"}
+            )
+            data = response.json()
+            if data:
+                return float(data[0]["lat"]), float(data[0]["lon"])
+            raise ValueError("Address not found")
+    
+    @staticmethod
+    def calculate_distance(coord1: Tuple[float, float], coord2: Tuple[float, float]) -> float:
+        """Calculate distance in km between two coordinates"""
+        return geodesic(coord1, coord2).kilometers
+    
+    @staticmethod
+    async def find_suppliers_nearby(
+        artisan_location: Tuple[float, float],
+        max_distance_km: float = 50
+    ) -> List[dict]:
+        """Find suppliers within radius"""
+        # Query database for suppliers with coordinates
+        # Filter by distance
+        pass
+    
+    @staticmethod
+    async def get_route(
+        start: Tuple[float, float],
+        end: Tuple[float, float]
+    ) -> dict:
+        """Get optimal route using OSRM"""
+        async with httpx.AsyncClient() as client:
+            url = f"http://router.project-osrm.org/route/v1/driving/{start[1]},{start[0]};{end[1]},{end[0]}"
+            response = await client.get(url, params={"overview": "full", "geometries": "geojson"})
+            return response.json()
+    
+    @staticmethod
+    def calculate_delivery_charge(distance_km: float, base_rate: float = 50) -> float:
+        """Calculate delivery charge based on distance"""
+        if distance_km <= 5:
+            return base_rate
+        return base_rate + (distance_km - 5) * 10  # ₹10 per km after 5km
+Database Schema Addition:
+python# Add to models.py
+
+class Location(Base):
+    __tablename__ = "locations"
+    id = Column(String, primary_key=True)
+    entity_type = Column(String)  # 'artisan', 'supplier', 'delivery'
+    entity_id = Column(String)
+    latitude = Column(Float)
+    longitude = Column(Float)
+    address = Column(Text)
+    city = Column(String)
+    state = Column(String)
+    pincode = Column(String)
+    delivery_radius_km = Column(Float)  # For suppliers
+    updated_at = Column(DateTime, default=datetime.utcnow)
+
+class DeliveryTracking(Base):
+    __tablename__ = "delivery_tracking"
+    id = Column(String, primary_key=True)
+    order_id = Column(String, ForeignKey("orders.id"))
+    current_lat = Column(Float)
+    current_lng = Column(Float)
+    status = Column(String)  # picked_up, in_transit, nearby, delivered
+    estimated_arrival = Column(DateTime)
+    updated_at = Column(DateTime, default=datetime.utcnow)
+Frontend Map Component:
+File: src/components/MapView.jsx
+jsximport React, { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, Circle, Polyline } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+import axios from 'axios';
+
+// Fix default marker icon issue with Leaflet + React
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
+  iconUrl: require('leaflet/dist/images/marker-icon.png'),
+  shadowUrl: require('leaflet/dist/images/marker-shadow.png'),
+});
+
+// Custom icons
+const artisanIcon = new L.Icon({
+  iconUrl: '/icons/artisan-pin.png',
+  iconSize: [32, 32],
+});
+
+const supplierIcon = new L.Icon({
+  iconUrl: '/icons/supplier-pin.png',
+  iconSize: [32, 32],
+});
+
+export default function MapView({ artisanId }) {
+  const [artisanLocation, setArtisanLocation] = useState(null);
+  const [suppliers, setSuppliers] = useState([]);
+  const [selectedSupplier, setSelectedSupplier] = useState(null);
+  const [route, setRoute] = useState(null);
+
+  useEffect(() => {
+    loadMapData();
+  }, [artisanId]);
+
+  const loadMapData = async () => {
+    try {
+      const response = await axios.get(`/api/map/artisan/${artisanId}`);
+      setArtisanLocation(response.data.location);
+      setSuppliers(response.data.nearby_suppliers);
+    } catch (error) {
+      console.error('Failed to load map data:', error);
+    }
+  };
+
+  const showRoute = async (supplier) => {
+    setSelectedSupplier(supplier);
+    try {
+      const response = await axios.post('/api/map/route', {
+        start: artisanLocation,
+        end: supplier.location,
+      });
+      setRoute(response.data.route);
+    } catch (error) {
+      console.error('Failed to get route:', error);
+    }
+  };
+
+  if (!artisanLocation) {
+    return <div>Loading map...</div>;
+  }
+
+  return (
+    <div className="h-screen w-full relative">
+      <MapContainer
+        center={[artisanLocation.lat, artisanLocation.lng]}
+        zoom={12}
+        style={{ height: '100%', width: '100%' }}
+      >
+        <TileLayer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        />
+
+        {/* Artisan marker */}
+        <Marker position={[artisanLocation.lat, artisanLocation.lng]} icon={artisanIcon}>
+          <Popup>
+            <div>
+              <h3 className="font-bold">Your Location</h3>
+              <p>{artisanLocation.address}</p>
+            </div>
+          </Popup>
+        </Marker>
+
+        {/* Supplier markers */}
+        {suppliers.map((supplier) => (
+          <React.Fragment key={supplier.id}>
+            <Marker
+              position={[supplier.location.lat, supplier.location.lng]}
+              icon={supplierIcon}
+              eventHandlers={{
+                click: () => showRoute(supplier),
+              }}
+            >
+              <Popup>
+                <div className="p-2">
+                  <h3 className="font-bold text-lg">{supplier.name}</h3>
+                  <p className="text-sm text-gray-600">{supplier.materials.join(', ')}</p>
+                  <p className="text-sm">📍 {supplier.distance.toFixed(1)} km away</p>
+                  <p className="text-sm">⭐ {supplier.rating}/5</p>
+                  <p className="text-sm">🚚 ₹{supplier.delivery_charge}</p>
+                  <button
+                    className="mt-2 bg-blue-500 text-white px-4 py-2 rounded text-sm"
+                    onClick={() => {/* Order from this supplier */}}
+                  >
+                    Order Now
+                  </button>
+                </div>
+              </Popup>
+            </Marker>
+
+            {/* Delivery radius circle */}
+            {supplier.delivery_radius && (
+              <Circle
+                center={[supplier.location.lat, supplier.location.lng]}
+                radius={supplier.delivery_radius * 1000} // km to meters
+                pathOptions={{ color: 'blue', fillOpacity: 0.1 }}
+              />
+            )}
+          </React.Fragment>
+        ))}
+
+        {/* Route polyline */}
+        {route && (
+          <Polyline
+            positions={route.coordinates.map(([lng, lat]) => [lat, lng])}
+            pathOptions={{ color: 'red', weight: 4 }}
+          />
+        )}
+      </MapContainer>
+
+      {/* Map controls overlay */}
+      <div className="absolute top-4 right-4 bg-white p-4 rounded-lg shadow-lg z-[1000]">
+        <h3 className="font-bold mb-2">Filters</h3>
+        <label className="block mb-2">
+          <input type="checkbox" /> Show only 5km radius
+        </label>
+        <label className="block mb-2">
+          <input type="checkbox" /> Show only 4+ rated
+        </label>
+        <button className="bg-green-500 text-white px-4 py-2 rounded w-full">
+          Refresh
+        </button>
+      </div>
+
+      {/* Selected supplier info */}
+      {selectedSupplier && (
+        <div className="absolute bottom-4 left-4 bg-white p-4 rounded-lg shadow-lg z-[1000] max-w-sm">
+          <h3 className="font-bold text-lg">{selectedSupplier.name}</h3>
+          <p className="text-sm text-gray-600">Distance: {selectedSupplier.distance.toFixed(1)} km</p>
+          <p className="text-sm text-gray-600">Delivery: ₹{selectedSupplier.delivery_charge}</p>
+          <p className="text-sm text-gray-600">ETA: {route?.duration ? Math.round(route.duration / 60) : '?'} mins</p>
+          <button
+            className="mt-2 bg-red-500 text-white px-4 py-2 rounded w-full"
+            onClick={() => {
+              setSelectedSupplier(null);
+              setRoute(null);
+            }}
+          >
+            Clear
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+API Endpoints for Maps:
+python# src/karigar/api/map_routes.py
+
+from fastapi import APIRouter, HTTPException
+from karigar.tools.location_tools import LocationTools
+from karigar.memory.sql_memory import get_session
+
+router = APIRouter(prefix="/api/map", tags=["maps"])
+
+@router.get("/artisan/{artisan_id}")
+async def get_artisan_map_data(artisan_id: str):
+    """Get artisan location and nearby suppliers"""
+    session = get_session()
+    
+    # Get artisan location
+    artisan_loc = session.query(Location).filter_by(
+        entity_type="artisan",
+        entity_id=artisan_id
+    ).first()
+    
+    if not artisan_loc:
+        raise HTTPException(404, "Artisan location not found")
+    
+    # Find nearby suppliers
+    suppliers = await LocationTools.find_suppliers_nearby(
+        (artisan_loc.latitude, artisan_loc.longitude),
+        max_distance_km=50
+    )
+    
+    return {
+        "location": {
+            "lat": artisan_loc.latitude,
+            "lng": artisan_loc.longitude,
+            "address": artisan_loc.address
+        },
+        "nearby_suppliers": suppliers
+    }
+
+@router.post("/route")
+async def get_route(data: dict):
+    """Get route between two points"""
+    start = (data["start"]["lat"], data["start"]["lng"])
+    end = (data["end"]["lat"], data["end"]["lng"])
+    
+    route = await LocationTools.get_route(start, end)
+    return route
+
+@router.post("/geocode")
+async def geocode_address(address: str):
+    """Convert address to coordinates"""
+    lat, lng = await LocationTools.geocode_address(address)
+    return {"lat": lat, "lng": lng}
+
+@router.get("/tracking/{order_id}")
+async def track_delivery(order_id: str):
+    """Get real-time delivery location"""
+    session = get_session()
+    tracking = session.query(DeliveryTracking).filter_by(order_id=order_id).first()
+    
+    if not tracking:
+        raise HTTPException(404, "Tracking not found")
+    
+    return {
+        "current_location": {
+            "lat": tracking.current_lat,
+            "lng": tracking.current_lng
+        },
+        "status": tracking.status,
+        "eta": tracking.estimated_arrival
+    }
+
+📱 OTHER CRITICAL MISSING FEATURES
+1. Authentication & User Management (HIGHEST PRIORITY)
+python# src/karigar/api/auth_routes.py
+
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+import jwt
+from datetime import datetime, timedelta
+from passlib.context import CryptContext
+
+router = APIRouter(prefix="/api/auth", tags=["auth"])
+pwd_context = CryptContext(schemes=["bcrypt"])
+security = HTTPBearer()
+
+SECRET_KEY = "your-secret-key-change-this"
+
+@router.post("/signup")
+async def signup(data: dict):
+    """Register new artisan/supplier"""
+    # Check if phone/email exists
+    # Send OTP
+    # Create user after OTP verification
+    pass
+
+@router.post("/login")
+async def login(phone: str, password: str):
+    """Login with phone and password"""
+    # Verify credentials
+    # Generate JWT token
+    token = jwt.encode(
+        {"user_id": "123", "exp": datetime.utcnow() + timedelta(days=30)},
+        SECRET_KEY
+    )
+    return {"token": token}
+
+@router.post("/verify-otp")
+async def verify_otp(phone: str, otp: str):
+    """Verify OTP for signup/login"""
+    pass
+
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    """Dependency to get current authenticated user"""
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=["HS256"])
+        return payload["user_id"]
+    except:
+        raise HTTPException(401, "Invalid token")
+Database Schema:
+pythonclass User(Base):
+    __tablename__ = "users"
+    id = Column(String, primary_key=True)
+    phone = Column(String, unique=True)
+    email = Column(String, unique=True, nullable=True)
+    password_hash = Column(String)
+    role = Column(String)  # 'artisan', 'supplier', 'admin'
+    name = Column(String)
+    is_verified = Column(Integer, default=0)
+    kyc_status = Column(String)  # 'pending', 'verified', 'rejected'
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+2. Image Upload & Management
+python# src/karigar/tools/image_tools.py
+
+from PIL import Image
+import io
+from pathlib import Path
+import uuid
+
+class ImageTools:
+    UPLOAD_DIR = Path("./uploads/images")
+    
+    @classmethod
+    def save_image(cls, file_bytes: bytes, compress: bool = True) -> str:
+        """Save and optionally compress image"""
+        cls.UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+        
+        img = Image.open(io.BytesIO(file_bytes))
+        
+        if compress:
+            img = img.convert("RGB")
+            img.thumbnail((1200, 1200), Image.Resampling.LANCZOS)
+        
+        filename = f"{uuid.uuid4()}.jpg"
+        filepath = cls.UPLOAD_DIR / filename
+        img.save(filepath, "JPEG", quality=85, optimize=True)
+        
+        return str(filepath)
+API Endpoint:
+pythonfrom fastapi import File, UploadFile
+
+@router.post("/upload-image")
+async def upload_image(file: UploadFile = File(...)):
+    """Upload product/profile image"""
+    contents = await file.read()
+    filepath = ImageTools.save_image(contents)
+    return {"url": f"/images/{Path(filepath).name}"}
+
+3. Notifications System
+python# src/karigar/tools/notification_tools.py
+
+import httpx
+from typing import List
+
+class NotificationService:
+    @staticmethod
+    async def send_push(user_id: str, title: str, body: str):
+        """Send push notification (using Firebase Cloud Messaging)"""
+        # Get user's FCM token from database
+        # Send via FCM API
+        pass
+    
+    @staticmethod
+    async def send_whatsapp(phone: str, message: str):
+        """Send WhatsApp message via Twilio/WATI"""
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://api.twilio.com/2010-04-01/Accounts/{ACCOUNT_SID}/Messages.json",
+                auth=("SID", "TOKEN"),
+                data={
+                    "From": "whatsapp:+14155238886",
+                    "To": f"whatsapp:{phone}",
+                    "Body": message
+                }
+            )
+            return response.json()
+    
+    @staticmethod
+    async def send_sms(phone: str, message: str):
+        """Send SMS via Twilio/MSG91"""
+        pass
+Database Schema:
+pythonclass Notification(Base):
+    __tablename__ = "notifications"
+    id = Column(String, primary_key=True)
+    user_id = Column(String, ForeignKey("users.id"))
+    type = Column(String)  # 'order_update', 'payment', 'promo'
+    title = Column(String)
+    body = Column(Text)
+    read = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+4. Rating & Review System
+pythonclass Review(Base):
+    __tablename__ = "reviews"
+    id = Column(String, primary_key=True)
+    order_id = Column(String, ForeignKey("orders.id"))
+    reviewer_id = Column(String, ForeignKey("users.id"))
+    reviewee_id = Column(String, ForeignKey("users.id"))
+    reviewee_type = Column(String)  # 'supplier', 'artisan'
+    rating = Column(Integer)  # 1-5
+    comment = Column(Text)
+    images = Column(JSON)  # Array of image URLs
+    created_at = Column(DateTime, default=datetime.utcnow)
+API:
+python@router.post("/reviews")
+async def create_review(review: dict, user_id: str = Depends(get_current_user)):
+    """Submit a review after order completion"""
+    pass
+
+@router.get("/reviews/supplier/{supplier_id}")
+async def get_supplier_reviews(supplier_id: str):
+    """Get all reviews for a supplier"""
+    pass
+
+5. Payment Gateway Integration
+python# src/karigar/tools/payment_gateway.py
+
+import razorpay
+
+class PaymentGateway:
+    def __init__(self, key_id: str, key_secret: str):
+        self.client = razorpay.Client(auth=(key_id, key_secret))
+    
+    def create_order(self, amount: float, currency: str = "INR"):
+        """Create Razorpay order"""
+        return self.client.order.create({
+            "amount": int(amount * 100),  # Amount in paise
+            "currency": currency,
+            "payment_capture": 1
+        })
+    
+    def verify_payment(self, payment_id: str, order_id: str, signature: str):
+        """Verify payment signature"""
+        try:
+            self.client.utility.verify_payment_signature({
+                "razorpay_payment_id": payment_id,
+                "razorpay_order_id": order_id,
+                "razorpay_signature": signature
+            })
+            return True
+        except:
+            return False
+
+6. Analytics Dashboard
+python# src/karigar/api/analytics_routes.py
+
+@router.get("/analytics/overview")
+async def get_analytics(user_id: str = Depends(get_current_user)):
+    """Get user's business analytics"""
+    session = get_session()
+    
+    # Total orders
+    total_orders = session.query(Order).filter_by(artisan_id=user_id).count()
+    
+    # Total revenue
+    total_revenue = session.query(func.sum(Order.amount)).filter_by(
+        artisan_id=user_id,
+        status="completed"
+    ).scalar()
+    
+    # Popular materials
+    popular_materials = session.query(
+        MaterialRequest.material,
+        func.count(MaterialRequest.id)
+    ).filter_by(artisan_id=user_id).group_by(MaterialRequest.material).all()
+    
+    return {
+        "total_orders": total_orders,
+        "total_revenue": total_revenue,
+        "popular_materials": popular_materials,
+        # ... more metrics
+    }
+
+7. Search & Filters
+python@router.get("/suppliers/search")
+async def search_suppliers(
+    material: str = None,
+    min_rating: float = None,
+    max_distance_km: float = None,
+    sort_by: str = "rating"  # 'rating', 'price', 'distance'
+):
+    """Advanced supplier search with filters"""
+    query = session.query(Supplier)
+    
+    if material:
+        query = query.filter(Supplier.materials.contains(material))
+    
+    if min_rating:
+        query = query.filter(Supplier.rating >= min_rating)
+    
+    # Apply sorting
+    if sort_by == "rating":
+        query = query.order_by(Supplier.rating.desc())
+    
+    return query.all()
+
+8. Offline Support (PWA)
+File: public/service-worker.js
+javascriptconst CACHE_NAME = 'karigar-v1';
+const urlsToCache = [
+  '/',
+  '/static/css/main.css',
+  '/static/js/main.js',
+  '/offline.html'
+];
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(urlsToCache))
+  );
+});
+
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request)
+      .then((response) => response || fetch(event.request))
+      .catch(() => caches.match('/offline.html'))
+  );
+});
+File: public/manifest.json
+json{
+  "name": "KarigarAgent",
+  "short_name": "Karigar",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3498db",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
+
+🎯 REVISED PRIORITY CHECKLIST
+MUST HAVE (Phase 1 MVP):
+
+ Basic agent workflow (original plan)
+ Maps with supplier proximity search ⭐
+ User authentication (phone/OTP) ⭐
+ Image upload for products ⭐
+ Payment gateway integration ⭐
+ Basic notifications (in-app + SMS)
+
+SHOULD HAVE (Phase 2):
+
+ Rating & review system
+ Order tracking
+ Analytics dashboard
+ Advanced search & filters
+ WhatsApp integration
+ Multi-language support
+
+NICE TO HAVE (Phase 3):
+
+ PWA/Offline support
+ Voice input
+ Social sharing
+ Referral program
+ AI price prediction
+ Demand forecasting
+
+
+📦 UPDATED DEPENDENCIES
+txt# Add to requirements.txt
+
+# Maps & Location
+geopy==2.4.0
+
+# Image Processing
+Pillow==10.1.0
+
+# Authentication
+pyjwt==2.8.0
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.3.0
+
+# Payments
+razorpay==1.4.1
+
+# Notifications
+twilio==8.10.0  # For SMS/WhatsApp
+firebase-admin==6.3.0  # For push notifications
+
+# Frontend (package.json)
+leaflet==1.9.4
+react-leaflet==4.2.1
+axios==1.6.2

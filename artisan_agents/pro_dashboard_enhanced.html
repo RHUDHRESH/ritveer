@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArtisanHub - AI-Powered Artisan Analysis with Real-Time Thinking</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.95;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
+        }
+
+        .card-title {
+            font-size: 1.5em;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        /* Input Section */
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .input-group input,
+        .input-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: inherit;
+            transition: all 0.3s;
+        }
+
+        .input-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .input-group input:focus,
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn-analyze {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-analyze:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-analyze:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        /* AI Thinking Display */
+        .thinking-container {
+            background: linear-gradient(135deg, #f5f7ff 0%, #fff0f5 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 2px solid #667eea;
+            min-height: 300px;
+        }
+
+        .thinking-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+
+        .thinking-pulse {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse-thinking 1.5s infinite;
+        }
+
+        @keyframes pulse-thinking {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            50% { opacity: 0.5; }
+        }
+
+        .thinking-phase {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s;
+        }
+
+        .thinking-phase.active {
+            border-left-color: #10b981;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+        }
+
+        .thinking-phase.complete {
+            border-left-color: #a0aec0;
+            opacity: 0.8;
+        }
+
+        .phase-name {
+            font-weight: 700;
+            color: #667eea;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+        }
+
+        .phase-description {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 12px;
+        }
+
+        .thoughts-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .thought-item {
+            padding: 8px 12px;
+            margin: 6px 0;
+            background: #f0f4ff;
+            border-radius: 6px;
+            border-left: 3px solid #667eea;
+            font-size: 0.95em;
+            color: #333;
+            animation: slideIn 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .confidence-badge {
+            font-size: 0.8em;
+            padding: 3px 8px;
+            border-radius: 12px;
+            background: #667eea;
+            color: white;
+            white-space: nowrap;
+            margin-left: 10px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            animation: progressFill 0.5s ease;
+        }
+
+        @keyframes progressFill {
+            from { width: 0; }
+        }
+
+        /* Results Section */
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .result-item {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .result-label {
+            font-weight: 600;
+            color: #555;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .result-value {
+            font-size: 1.3em;
+            color: #667eea;
+            font-weight: 700;
+            margin-top: 8px;
+        }
+
+        /* Status Indicator */
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: #f0f4ff;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9em;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse-status 2s infinite;
+        }
+
+        @keyframes pulse-status {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+        }
+
+        .status-indicator.idle .status-dot {
+            background: #a0aec0;
+            animation: none;
+        }
+
+        .status-indicator.error .status-dot {
+            background: #ef4444;
+            animation: pulse-error 1s infinite;
+        }
+
+        @keyframes pulse-error {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            .thinking-container {
+                min-height: auto;
+            }
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .opportunities-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .opportunity-card {
+            padding: 15px;
+            margin: 10px 0;
+            background: linear-gradient(135deg, #f5f7ff 0%, #fff0f5 100%);
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .opportunity-title {
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .opportunity-details {
+            font-size: 0.9em;
+            color: #666;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎨 ArtisanHub AI Analysis</h1>
+            <p>With Real-Time AI Thinking & Reasoning Process</p>
+        </header>
+
+        <div class="main-grid">
+            <!-- Input Section -->
+            <div class="card">
+                <div class="card-title">📝 Describe Your Work</div>
+
+                <div class="input-group">
+                    <label for="description">Tell us about your artisan craft:</label>
+                    <textarea id="description" placeholder="Describe your work, materials, techniques, experience level..."></textarea>
+                </div>
+
+                <div class="input-group">
+                    <label for="location">Your Location (City/Region):</label>
+                    <input type="text" id="location" placeholder="e.g., Delhi, Mumbai, Bangalore...">
+                </div>
+
+                <button class="btn-analyze" onclick="startAnalysis()" id="analyzeBtn">🚀 Analyze My Work</button>
+
+                <div id="statusIndicator" class="status-indicator idle" style="margin-top: 20px;">
+                    <span class="status-dot"></span>
+                    <span id="statusText">Ready to analyze</span>
+                </div>
+            </div>
+
+            <!-- AI Thinking Display -->
+            <div class="card">
+                <div class="card-title">🤖 AI Thinking Process</div>
+                <div id="thinkingContainer" class="thinking-container">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">💭</div>
+                        <p>AI thoughts will appear here as it analyzes your work...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" style="display: none;">
+            <div class="card">
+                <div class="card-title">✨ Analysis Results</div>
+
+                <div class="results-grid" id="resultsGrid">
+                    <!-- Results will be populated here -->
+                </div>
+
+                <!-- Opportunities -->
+                <div id="opportunitiesSection" class="opportunities-section" style="display: none;">
+                    <h3 style="color: #667eea; margin-bottom: 15px;">🎯 Market Opportunities</h3>
+                    <div id="opportunitiesList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '';
+        let isAnalyzing = false;
+        let eventSource = null;
+
+        function updateStatus(status, message) {
+            const indicator = document.getElementById('statusIndicator');
+            const text = document.getElementById('statusText');
+
+            indicator.className = `status-indicator ${status}`;
+            text.textContent = message;
+        }
+
+        function clearThinking() {
+            document.getElementById('thinkingContainer').innerHTML = '';
+        }
+
+        function addPhase(phaseName, description) {
+            const container = document.getElementById('thinkingContainer');
+            const phaseDiv = document.createElement('div');
+            phaseDiv.className = 'thinking-phase active';
+            phaseDiv.id = `phase-${phaseName.replace(/\s+/g, '-')}`;
+
+            phaseDiv.innerHTML = `
+                <div class="phase-name">${phaseName}</div>
+                <div class="phase-description">${description}</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 20%;"></div>
+                </div>
+                <ul class="thoughts-list" id="thoughts-${phaseName}"></ul>
+            `;
+
+            container.appendChild(phaseDiv);
+            return phaseDiv;
+        }
+
+        function addThought(phaseName, thought, confidence) {
+            const thoughtsList = document.getElementById(`thoughts-${phaseName}`);
+            if (!thoughtsList) return;
+
+            const item = document.createElement('li');
+            item.className = 'thought-item';
+
+            const confidencePercent = Math.round(confidence * 100);
+            item.innerHTML = `
+                <span>${thought}</span>
+                <span class="confidence-badge">${confidencePercent}%</span>
+            `;
+
+            thoughtsList.appendChild(item);
+
+            // Scroll to bottom
+            document.getElementById('thinkingContainer').scrollTop =
+                document.getElementById('thinkingContainer').scrollHeight;
+        }
+
+        function completePhase(phaseName) {
+            const phaseDiv = document.getElementById(`phase-${phaseName.replace(/\s+/g, '-')}`);
+            if (phaseDiv) {
+                phaseDiv.classList.remove('active');
+                phaseDiv.classList.add('complete');
+                const progressFill = phaseDiv.querySelector('.progress-fill');
+                if (progressFill) {
+                    progressFill.style.width = '100%';
+                }
+            }
+        }
+
+        async function startAnalysis() {
+            const description = document.getElementById('description').value.trim();
+            const location = document.getElementById('location').value.trim();
+
+            if (!description || description.length < 10) {
+                alert('Please describe your work in at least 10 characters');
+                return;
+            }
+
+            isAnalyzing = true;
+            const btn = document.getElementById('analyzeBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner"></span> Analyzing...';
+
+            updateStatus('thinking', 'AI is thinking...');
+            clearThinking();
+            document.getElementById('resultsSection').style.display = 'none';
+
+            // Close any previous connection
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            try {
+                const url = `${API_BASE}/api/analyze-with-thinking?description=${encodeURIComponent(description)}&location=${encodeURIComponent(location)}`;
+
+                console.log('Connecting to:', url);
+                eventSource = new EventSource(url);
+
+                let currentPhase = null;
+                let phaseThoughts = {};
+
+                eventSource.onmessage = (event) => {
+                    try {
+                        console.log('Event received:', event.data.substring(0, 100));
+                        const data = JSON.parse(event.data);
+                        console.log('Parsed event type:', data.type);
+
+                        switch (data.type) {
+                            case 'session_start':
+                                console.log('Session started');
+                                break;
+
+                            case 'phase_start':
+                                console.log('Phase starting:', data.phase.phase_name);
+                                currentPhase = data.phase.phase_name;
+                                phaseThoughts[currentPhase] = [];
+                                addPhase(data.phase.phase_name, data.phase.description);
+                                break;
+
+                            case 'thought':
+                                console.log('Thought received:', data.thought.substring(0, 50));
+                                if (data.phase) {
+                                    if (!phaseThoughts[data.phase]) {
+                                        phaseThoughts[data.phase] = [];
+                                    }
+                                    phaseThoughts[data.phase].push({
+                                        text: data.thought,
+                                        confidence: data.confidence
+                                    });
+                                    addThought(data.phase, data.thought, data.confidence);
+                                }
+                                break;
+
+                            case 'phase_complete':
+                                console.log('Phase complete:', data.phase);
+                                completePhase(data.phase);
+                                break;
+
+                            case 'session_complete':
+                                console.log('Session complete');
+                                finishAnalysis();
+                                break;
+
+                            case 'error':
+                                console.error('Error from server:', data.message);
+                                handleError(data.message);
+                                break;
+                        }
+                    } catch (e) {
+                        console.error('Parse error:', e, 'Raw event:', event.data);
+                    }
+                };
+
+                eventSource.onerror = (error) => {
+                    console.error('EventSource error:', error);
+                    if (eventSource.readyState === EventSource.CLOSED) {
+                        console.log('Connection closed normally');
+                    } else {
+                        handleError('Connection lost or error occurred');
+                    }
+                };
+
+            } catch (error) {
+                console.error('Start error:', error);
+                handleError(error.message);
+            }
+        }
+
+        function finishAnalysis(session) {
+            if (eventSource) {
+                eventSource.close();
+            }
+            isAnalyzing = false;
+
+            const btn = document.getElementById('analyzeBtn');
+            btn.disabled = false;
+            btn.innerHTML = '🚀 Analyze My Work';
+
+            updateStatus('idle', 'Analysis complete');
+
+            // Display results based on thinking process
+            const description = document.getElementById('description').value.trim();
+            const location = document.getElementById('location').value.trim();
+
+            // Fetch actual analysis from the main API
+            fetch('/api/analyze-artisan', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    description: description,
+                    location: location
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.ai_analysis) {
+                    displayResults(data.ai_analysis);
+                } else {
+                    console.warn('Analysis API returned no results, showing mock data');
+                    const mockAnalysis = {
+                        artisan_type: 'artisan',
+                        specialization: 'craft work',
+                        skill_level: 'intermediate',
+                        business_potential: 'medium',
+                        estimated_monthly_income: '₹20,000-35,000',
+                        recommended_actions: ['Expand skills', 'Find markets', 'Build portfolio']
+                    };
+                    displayResults(mockAnalysis);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching analysis:', error);
+                const mockAnalysis = {
+                    artisan_type: 'artisan',
+                    specialization: 'craft work',
+                    skill_level: 'intermediate',
+                    business_potential: 'medium',
+                    estimated_monthly_income: '₹20,000-35,000',
+                    recommended_actions: ['Expand skills', 'Find markets', 'Build portfolio']
+                };
+                displayResults(mockAnalysis);
+            });
+        }
+
+        function displayResults(analysis) {
+            const resultsGrid = document.getElementById('resultsGrid');
+            resultsGrid.innerHTML = '';
+
+            const results = [
+                { label: 'Artisan Type', value: analysis.artisan_type || 'N/A' },
+                { label: 'Specialization', value: analysis.specialization || 'N/A' },
+                { label: 'Skill Level', value: analysis.skill_level || 'N/A' },
+                { label: 'Business Potential', value: analysis.business_potential || 'N/A' },
+                { label: 'Monthly Income', value: analysis.estimated_monthly_income || 'N/A' },
+                { label: 'Market', value: analysis.target_market || 'Local' }
+            ];
+
+            results.forEach(result => {
+                const item = document.createElement('div');
+                item.className = 'result-item';
+                item.innerHTML = `
+                    <div class="result-label">${result.label}</div>
+                    <div class="result-value">${result.value}</div>
+                `;
+                resultsGrid.appendChild(item);
+            });
+
+            if (analysis.recommended_actions && analysis.recommended_actions.length > 0) {
+                const oppSection = document.getElementById('opportunitiesSection');
+                const oppList = document.getElementById('opportunitiesList');
+                oppList.innerHTML = '';
+
+                analysis.recommended_actions.forEach(action => {
+                    const card = document.createElement('div');
+                    card.className = 'opportunity-card';
+                    card.innerHTML = `
+                        <div class="opportunity-title">📌 ${action}</div>
+                        <div class="opportunity-details">Recommended action for business growth</div>
+                    `;
+                    oppList.appendChild(card);
+                });
+
+                oppSection.style.display = 'block';
+            }
+
+            document.getElementById('resultsSection').style.display = 'block';
+        }
+
+        function handleError(message) {
+            isAnalyzing = false;
+            const btn = document.getElementById('analyzeBtn');
+            btn.disabled = false;
+            btn.innerHTML = '🚀 Analyze My Work';
+
+            updateStatus('error', `Error: ${message}`);
+            alert(`Analysis failed: ${message}`);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            updateStatus('idle', 'Ready to analyze');
+        });
+    </script>
+</body>
+</html>

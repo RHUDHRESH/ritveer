@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ArtisanHub - Business Growth Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #FF6B35;
+            --secondary: #F72585;
+            --dark: #0a0a0a;
+            --card: #1a1a1a;
+            --text: #f5f5f5;
+            --border: #333;
+        }
+
+        body {
+            background-color: var(--dark);
+            color: var(--text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+
+        .container-fluid {
+            height: 100vh;
+            display: flex;
+            padding: 0;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            padding: 20px 30px;
+            border-bottom: 2px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .header-info {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .artisan-name {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* Main Panel */
+        .content-panel {
+            flex: 1;
+            display: flex;
+            gap: 30px;
+            padding: 30px;
+            overflow: hidden;
+        }
+
+        /* Left Section - Context Input */
+        .context-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .context-section::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .context-section::-webkit-scrollbar-track {
+            background: var(--card);
+            border-radius: 10px;
+        }
+
+        .context-section::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+
+        /* Form Sections */
+        .form-section {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--primary);
+        }
+
+        .section-title i {
+            font-size: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 5px;
+            display: block;
+            opacity: 0.9;
+        }
+
+        .form-control,
+        .form-select {
+            background: #0d0d0d;
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 13px;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            background: #0d0d0d;
+            border-color: var(--primary);
+            color: var(--text);
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+        }
+
+        /* Form Row */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .form-row.full {
+            grid-template-columns: 1fr;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-analyze {
+            flex: 1;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border: none;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-analyze:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(255, 107, 53, 0.3);
+            color: white;
+        }
+
+        .btn-clear {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-clear:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Right Section - Side Panel Toggle */
+        .side-panel-toggle {
+            position: fixed;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border: none;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50% 0 0 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            z-index: 999;
+            transition: all 0.3s ease;
+            box-shadow: -4px 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        .side-panel-toggle:hover {
+            width: 60px;
+        }
+
+        .side-panel-toggle.active {
+            right: 350px;
+        }
+
+        /* Side Panel */
+        .side-panel {
+            position: fixed;
+            right: -400px;
+            top: 0;
+            width: 400px;
+            height: 100vh;
+            background: var(--card);
+            border-left: 1px solid var(--border);
+            padding: 20px;
+            overflow-y: auto;
+            transition: right 0.3s ease;
+            z-index: 1000;
+            padding-top: 100px;
+        }
+
+        .side-panel.active {
+            right: 0;
+        }
+
+        .side-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .side-panel::-webkit-scrollbar-track {
+            background: var(--card);
+        }
+
+        .side-panel::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+
+        .panel-section {
+            margin-bottom: 30px;
+        }
+
+        .panel-section-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-section-title i {
+            font-size: 18px;
+        }
+
+        /* Lists */
+        .item-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .item-card {
+            background: #0d0d0d;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 13px;
+        }
+
+        .item-card:hover {
+            border-color: var(--primary);
+            background: rgba(255, 107, 53, 0.05);
+        }
+
+        .item-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .item-description {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-bottom: 8px;
+        }
+
+        .item-contact {
+            font-size: 11px;
+            color: var(--primary);
+            word-break: break-all;
+        }
+
+        /* Status Messages */
+        .status-message {
+            background: rgba(255, 107, 53, 0.1);
+            border-left: 3px solid var(--primary);
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+
+        .status-message.loading {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .status-message.success {
+            background: rgba(76, 175, 80, 0.1);
+            border-color: #4CAF50;
+            color: #4CAF50;
+        }
+
+        .status-message.error {
+            background: rgba(244, 67, 54, 0.1);
+            border-color: #f44336;
+            color: #f44336;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 2px solid var(--border);
+            border-top: 2px solid var(--primary);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            text-align: center;
+            opacity: 0.6;
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: var(--primary);
+        }
+
+        .empty-state p {
+            font-size: 13px;
+            margin: 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .content-panel {
+                gap: 20px;
+                padding: 20px;
+            }
+
+            .side-panel {
+                width: 350px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="main-content">
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="bi bi-palette"></i> ArtisanHub</h1>
+            <div class="header-info">
+                <div class="artisan-name" id="artisanDisplay">
+                    <span id="artisanNameDisplay">Welcome</span> - <span id="craftDisplay">Select craft type</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content-panel">
+            <!-- Left Section: Context Input -->
+            <div class="context-section">
+                <!-- Personal Info -->
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="bi bi-person-circle"></i> Personal Information
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Name</label>
+                            <input type="text" class="form-control" id="artisanName" placeholder="Your name">
+                        </div>
+                        <div class="form-group">
+                            <label>Age</label>
+                            <input type="number" class="form-control" id="age" placeholder="Age">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Years of Experience</label>
+                        <input type="number" class="form-control" id="experience" placeholder="Years">
+                    </div>
+                </div>
+
+                <!-- Craft Information -->
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="bi bi-hammer"></i> Craft Information
+                    </div>
+                    <div class="form-group">
+                        <label>Craft Type</label>
+                        <select class="form-select" id="craftType">
+                            <option value="">Select your craft...</option>
+                            <option value="pottery">Pottery & Ceramics</option>
+                            <option value="carpenter">Carpentry & Woodwork</option>
+                            <option value="weaver">Weaving & Textiles</option>
+                            <option value="jeweler">Jewelry Making</option>
+                            <option value="metalworker">Metalworking</option>
+                            <option value="painter">Painting & Art</option>
+                            <option value="leather">Leather Crafts</option>
+                            <option value="glass">Glass Arts</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>What Do You Create?</label>
+                        <textarea class="form-control" id="craftDescription" rows="3" placeholder="Describe your creations..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Special Techniques/Products</label>
+                        <input type="text" class="form-control" id="specialties" placeholder="e.g., hand-thrown, glazing, traditional designs">
+                    </div>
+                </div>
+
+                <!-- Location Information -->
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="bi bi-geo-alt"></i> Location
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>City</label>
+                            <input type="text" class="form-control" id="city" placeholder="City">
+                        </div>
+                        <div class="form-group">
+                            <label>State</label>
+                            <input type="text" class="form-control" id="state" placeholder="State">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Country</label>
+                        <input type="text" class="form-control" id="country" placeholder="Country" value="India">
+                    </div>
+                    <div class="form-group">
+                        <label>Current Workspace</label>
+                        <select class="form-select" id="workspace">
+                            <option value="">Select workspace size...</option>
+                            <option value="none">None (just starting)</option>
+                            <option value="small">Small (10x10 ft)</option>
+                            <option value="medium">Medium (15x15 ft)</option>
+                            <option value="large">Large (20x20 ft+)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Business Information -->
+                <div class="form-section">
+                    <div class="section-title">
+                        <i class="bi bi-briefcase"></i> Business Goals
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Current Monthly Income (₹)</label>
+                            <input type="number" class="form-control" id="currentIncome" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Target Monthly Income (₹)</label>
+                            <input type="number" class="form-control" id="targetIncome" placeholder="50000">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Current Customers</label>
+                            <input type="number" class="form-control" id="currentCustomers" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Target Customers</label>
+                            <input type="number" class="form-control" id="targetCustomers" placeholder="100">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <button class="btn-analyze" onclick="analyzeProfile()">
+                        <i class="bi bi-lightning-fill"></i> Analyze & Generate Plan
+                    </button>
+                    <button class="btn-clear" onclick="clearForm()">Clear</button>
+                </div>
+
+                <div id="statusMessage"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Side Panel -->
+<div class="side-panel" id="sidePanel">
+    <!-- Materials & Equipment -->
+    <div class="panel-section">
+        <div class="panel-section-title">
+            <i class="bi bi-box2"></i> Materials & Equipment Needed
+        </div>
+        <div class="item-list" id="materialsList">
+            <div class="empty-state">
+                <i class="bi bi-inbox"></i>
+                <p>Fill out form and click Analyze to see materials</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Suppliers -->
+    <div class="panel-section">
+        <div class="panel-section-title">
+            <i class="bi bi-shop"></i> Suppliers & Contacts
+        </div>
+        <div class="item-list" id="suppliersList">
+            <div class="empty-state">
+                <i class="bi bi-inbox"></i>
+                <p>Suppliers will appear here after analysis</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- E-Commerce Opportunities -->
+    <div class="panel-section">
+        <div class="panel-section-title">
+            <i class="bi bi-shop-window"></i> E-Commerce Opportunities
+        </div>
+        <div class="item-list" id="opportunitiesList">
+            <div class="empty-state">
+                <i class="bi bi-inbox"></i>
+                <p>Marketplaces will appear after analysis</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Growth Options -->
+    <div class="panel-section">
+        <div class="panel-section-title">
+            <i class="bi bi-graph-up"></i> Growth Options
+        </div>
+        <div class="item-list" id="growthList">
+            <div class="empty-state">
+                <i class="bi bi-inbox"></i>
+                <p>Growth strategies will appear after analysis</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Side Panel Toggle Button -->
+<button class="side-panel-toggle" id="panelToggle" onclick="togglePanel()">
+    <i class="bi bi-card-list"></i>
+</button>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Toggle Side Panel
+    function togglePanel() {
+        const panel = document.getElementById('sidePanel');
+        const toggle = document.getElementById('panelToggle');
+        panel.classList.toggle('active');
+        toggle.classList.toggle('active');
+    }
+
+    // Update header display
+    function updateHeaderDisplay() {
+        const name = document.getElementById('artisanName').value || 'Welcome';
+        const craft = document.getElementById('craftType').value || 'Select craft type';
+
+        const craftLabels = {
+            'pottery': 'Pottery',
+            'carpenter': 'Carpentry',
+            'weaver': 'Weaving',
+            'jeweler': 'Jewelry',
+            'metalworker': 'Metalworking',
+            'painter': 'Painting',
+            'leather': 'Leather Crafts',
+            'glass': 'Glass Arts'
+        };
+
+        document.getElementById('artisanNameDisplay').textContent = name;
+        document.getElementById('craftDisplay').textContent = craftLabels[craft] || 'Select craft type';
+    }
+
+    // Add event listeners for header update
+    document.getElementById('artisanName').addEventListener('change', updateHeaderDisplay);
+    document.getElementById('craftType').addEventListener('change', updateHeaderDisplay);
+
+    // Clear Form
+    function clearForm() {
+        document.getElementById('artisanName').value = '';
+        document.getElementById('age').value = '';
+        document.getElementById('experience').value = '';
+        document.getElementById('craftType').value = '';
+        document.getElementById('craftDescription').value = '';
+        document.getElementById('specialties').value = '';
+        document.getElementById('city').value = '';
+        document.getElementById('state').value = '';
+        document.getElementById('country').value = 'India';
+        document.getElementById('workspace').value = '';
+        document.getElementById('currentIncome').value = '';
+        document.getElementById('targetIncome').value = '';
+        document.getElementById('currentCustomers').value = '';
+        document.getElementById('targetCustomers').value = '';
+        document.getElementById('statusMessage').innerHTML = '';
+        updateHeaderDisplay();
+    }
+
+    // Analyze Profile
+    async function analyzeProfile() {
+        const name = document.getElementById('artisanName').value;
+        const craftType = document.getElementById('craftType').value;
+        const city = document.getElementById('city').value;
+        const state = document.getElementById('state').value;
+
+        // Validation
+        if (!name || !craftType || !city || !state) {
+            showStatus('Please fill in Name, Craft Type, City, and State', 'error');
+            return;
+        }
+
+        showStatus('Analyzing your profile and gathering opportunities...', 'loading');
+
+        try {
+            const response = await fetch('/api/analyze-artisan', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: name,
+                    craft_type: craftType,
+                    city: city,
+                    state: state,
+                    age: document.getElementById('age').value,
+                    experience: document.getElementById('experience').value,
+                    description: document.getElementById('craftDescription').value,
+                    specialties: document.getElementById('specialties').value,
+                    workspace: document.getElementById('workspace').value,
+                    current_income: document.getElementById('currentIncome').value,
+                    target_income: document.getElementById('targetIncome').value,
+                    current_customers: document.getElementById('currentCustomers').value,
+                    target_customers: document.getElementById('targetCustomers').value
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                populateSidePanel(data);
+                showStatus('Profile analyzed! Check the side panel for opportunities.', 'success');
+
+                // Auto-open side panel
+                setTimeout(() => {
+                    if (!document.getElementById('sidePanel').classList.contains('active')) {
+                        togglePanel();
+                    }
+                }, 500);
+            } else {
+                showStatus('Error: ' + data.error, 'error');
+            }
+        } catch (error) {
+            showStatus('Error analyzing profile: ' + error.message, 'error');
+        }
+    }
+
+    // Populate Side Panel
+    function populateSidePanel(data) {
+        const analysis = data.ai_analysis || {};
+        const craft = document.getElementById('craftType').value;
+
+        // Materials & Equipment
+        const materials = getMaterialsByType(craft);
+        document.getElementById('materialsList').innerHTML = materials.map(m =>
+            `<div class="item-card">
+                <div class="item-title">${m.name}</div>
+                <div class="item-description">${m.description}</div>
+            </div>`
+        ).join('');
+
+        // Suppliers
+        const location = `${document.getElementById('city').value}, ${document.getElementById('state').value}`;
+        const suppliers = getSuppliersByType(craft, location);
+        document.getElementById('suppliersList').innerHTML = suppliers.map(s =>
+            `<div class="item-card">
+                <div class="item-title">${s.name}</div>
+                <div class="item-description">${s.type}</div>
+                <div class="item-contact">
+                    <i class="bi bi-telephone"></i> ${s.contact}
+                </div>
+            </div>`
+        ).join('');
+
+        // E-Commerce Opportunities
+        const opportunities = getMarketplacesByType(craft);
+        document.getElementById('opportunitiesList').innerHTML = opportunities.map(o =>
+            `<div class="item-card">
+                <div class="item-title">${o.name}</div>
+                <div class="item-description">Fees: ${o.fees}</div>
+                <div class="item-description">${o.potential}</div>
+            </div>`
+        ).join('');
+
+        // Growth Options
+        const growthOptions = getGrowthOptions(analysis);
+        document.getElementById('growthList').innerHTML = growthOptions.map(g =>
+            `<div class="item-card">
+                <div class="item-title">${g.title}</div>
+                <div class="item-description">${g.description}</div>
+            </div>`
+        ).join('');
+    }
+
+    // Get Materials by Craft Type
+    function getMaterialsByType(craft) {
+        const materials = {
+            'pottery': [
+                { name: 'Pottery Clay', description: '₹2,000-5,000 per bag (25kg)' },
+                { name: 'Kiln/Furnace', description: '₹50,000-200,000 (gas or electric)' },
+                { name: 'Pottery Wheel', description: '₹10,000-30,000' },
+                { name: 'Glazes & Pigments', description: '₹500-1,500 per type' },
+                { name: 'Workspace 20x20ft', description: 'Ventilation and utilities needed' },
+                { name: 'Drying Racks', description: '₹5,000-15,000' },
+                { name: 'Brushes & Tools', description: '₹3,000-8,000 set' }
+            ],
+            'carpenter': [
+                { name: 'Wood Materials', description: '₹500-2,000 per board foot' },
+                { name: 'Power Saw', description: '₹10,000-50,000' },
+                { name: 'Lathe', description: '₹20,000-100,000' },
+                { name: 'Chisels & Planes', description: '₹5,000-15,000 set' },
+                { name: 'Sanders', description: '₹3,000-25,000' },
+                { name: 'Clamps', description: '₹2,000-8,000' },
+                { name: 'Finishes & Stains', description: '₹500-1,500 per liter' }
+            ],
+            'weaver': [
+                { name: 'Loom', description: '₹15,000-100,000 (varies by type)' },
+                { name: 'Yarn/Thread', description: '₹200-1,000 per kg' },
+                { name: 'Dyes', description: '₹500-2,000 per color' },
+                { name: 'Spinning Wheel', description: '₹5,000-20,000' },
+                { name: 'Shuttle', description: '₹500-2,000' },
+                { name: 'Bobbins', description: '₹200-500 each' },
+                { name: 'Workspace 15x15ft', description: 'Good natural lighting' }
+            ],
+            'jeweler': [
+                { name: 'Precious Metals', description: '₹30,000-100,000 per kg' },
+                { name: 'Jewelry Tools', description: '₹15,000-40,000 set' },
+                { name: 'Furnace/Torch', description: '₹10,000-50,000' },
+                { name: 'Polishing Equipment', description: '₹5,000-20,000' },
+                { name: 'Digital Scale', description: '₹2,000-8,000' },
+                { name: 'Stones & Gems', description: '₹1,000-10,000+ per stone' },
+                { name: 'Workspace 10x10ft', description: 'Proper ventilation required' }
+            ],
+            'painter': [
+                { name: 'Canvas', description: '₹200-500 per piece' },
+                { name: 'Paints', description: '₹1,000-5,000 per set' },
+                { name: 'Brushes', description: '₹2,000-8,000 complete set' },
+                { name: 'Easel', description: '₹3,000-15,000' },
+                { name: 'Palette & Mixing', description: '₹500-2,000' },
+                { name: 'Good Lighting', description: '₹5,000-20,000' },
+                { name: 'Storage Cabinet', description: '₹3,000-10,000' }
+            ],
+            'metalworker': [
+                { name: 'Metals (Iron, Copper)', description: '₹50-200 per kg' },
+                { name: 'Anvil & Hammer', description: '₹5,000-20,000' },
+                { name: 'Forge/Furnace', description: '₹20,000-100,000' },
+                { name: 'Welding Equipment', description: '₹15,000-50,000' },
+                { name: 'Grinder & Polisher', description: '₹5,000-20,000' },
+                { name: 'Safety Equipment', description: '₹3,000-8,000' },
+                { name: 'Workspace 20x20ft', description: 'Ventilation and utilities' }
+            ],
+            'leather': [
+                { name: 'Leather', description: '₹500-2,000 per sq ft' },
+                { name: 'Cutting Tools', description: '₹3,000-10,000 set' },
+                { name: 'Stitching Tools', description: '₹2,000-6,000' },
+                { name: 'Dyes & Finishes', description: '₹500-2,000' },
+                { name: 'Workspace 15x15ft', description: 'Dry, well-ventilated' },
+                { name: 'Edge Beveler', description: '₹1,000-3,000' },
+                { name: 'Burnishing Tools', description: '₹1,000-3,000' }
+            ],
+            'glass': [
+                { name: 'Glass Materials', description: '₹200-1,000 per piece' },
+                { name: 'Kiln', description: '₹50,000-150,000' },
+                { name: 'Torch (if glassblowing)', description: '₹30,000-80,000' },
+                { name: 'Grinding & Polishing', description: '₹5,000-20,000' },
+                { name: 'Coloring Materials', description: '₹500-2,000 per type' },
+                { name: 'Safety Equipment', description: '₹3,000-8,000' },
+                { name: 'Workspace 15x15ft', description: 'Heat-resistant floor' }
+            ]
+        };
+
+        return materials[craft] || [];
+    }
+
+    // Get Suppliers by Craft Type
+    function getSuppliersByType(craft, location) {
+        const suppliers = [
+            { name: 'Amazon.in', type: 'Online Marketplace', contact: 'www.amazon.in' },
+            { name: 'Flipkart', type: 'Online Marketplace', contact: 'www.flipkart.com' },
+            { name: 'Alibaba', type: 'Wholesale (International)', contact: 'www.alibaba.com' },
+            { name: 'Local Hardware Store', type: 'Local Supplier', contact: 'Search Google Maps' },
+            { name: 'Craft Supplier Store', type: 'Specialized', contact: `Search "${craft} supplier ${location}"` },
+            { name: 'Wholesale Market', type: 'Bulk Purchase', contact: 'Check local markets' }
+        ];
+
+        return suppliers;
+    }
+
+    // Get Marketplaces by Craft Type
+    function getMarketplacesByType(craft) {
+        const marketplaces = {
+            'pottery': [
+                { name: 'Etsy', fees: '6.5%', potential: '₹30,000-120,000/month potential' },
+                { name: 'Amazon Handmade', fees: '15%', potential: '₹15,000-75,000/month potential' },
+                { name: 'Shopify', fees: '$29/month', potential: '₹50,000-200,000/month potential' },
+                { name: 'Instagram Shop', fees: '2-5%', potential: 'Direct to consumer' },
+                { name: 'Flipkart', fees: '8-20%', potential: 'Indian market' }
+            ],
+            'carpenter': [
+                { name: 'Etsy', fees: '6.5%', potential: '₹40,000-150,000/month potential' },
+                { name: 'Wayfair', fees: 'Variable', potential: 'Furniture focused' },
+                { name: 'Shopify', fees: '$29/month', potential: '₹75,000-250,000/month potential' },
+                { name: 'Instagram', fees: '2-5%', potential: 'Portfolio building' },
+                { name: 'Lumberjocks', fees: 'Free', potential: 'Community marketplace' }
+            ]
+        };
+
+        return marketplaces[craft] || [
+            { name: 'Etsy', fees: '6.5%', potential: '₹30,000-100,000/month' },
+            { name: 'Shopify', fees: '$29/month', potential: '₹50,000-200,000/month' },
+            { name: 'Instagram Shop', fees: '2-5%', potential: 'Direct sales' }
+        ];
+    }
+
+    // Get Growth Options
+    function getGrowthOptions(analysis) {
+        return [
+            {
+                title: 'Online Sales',
+                description: 'Setup marketplace accounts and start taking orders online'
+            },
+            {
+                title: 'Wholesale/B2B',
+                description: 'Approach bulk buyers and corporate clients'
+            },
+            {
+                title: 'Consignment in Venues',
+                description: 'Partner with local galleries, shops, and markets'
+            },
+            {
+                title: 'Workshops/Classes',
+                description: 'Teach your craft and generate additional income'
+            },
+            {
+                title: 'Brand Building',
+                description: 'Create a unique brand identity and social media presence'
+            },
+            {
+                title: 'Custom Orders',
+                description: 'Accept bespoke commissions at premium prices'
+            }
+        ];
+    }
+
+    // Status Messages
+    function showStatus(message, type) {
+        const statusDiv = document.getElementById('statusMessage');
+        statusDiv.innerHTML = `<div class="status-message ${type}">
+            ${type === 'loading' ? '<span class="spinner"></span> ' : ''}
+            ${message}
+        </div>`;
+
+        if (type === 'success' || type === 'error') {
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 5000);
+        }
+    }
+</script>
+
+</body>
+</html>

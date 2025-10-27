@@ -3,27 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ArtisanHub Intelligence - AI-Powered Craftsmen Platform</title>
-    
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
+    <title>ArtisanHub - Business Growth</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
-    <!-- Animate.css -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
-    
     <style>
         :root {
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            --dark-bg: #1a1a2e;
-            --card-bg: #16213e;
-            --text-primary: #ffffff;
-            --text-secondary: #b8bcc8;
-            --accent-blue: #4facfe;
-            --accent-purple: #764ba2;
-            --border-color: #2d3561;
+            --primary: #FF6B35;
+            --secondary: #F72585;
+            --dark: #0a0a0a;
+            --card: #1a1a1a;
+            --text: #f5f5f5;
+            --border: #333;
         }
 
         * {
@@ -33,756 +23,544 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--dark-bg);
-            color: var(--text-primary);
-            min-height: 100vh;
-            overflow-x: hidden;
+            background-color: var(--dark);
+            color: var(--text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        /* Modern Navigation */
-        .navbar-modern {
-            background: rgba(26, 26, 46, 0.95);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border-color);
-            padding: 1rem 0;
-            position: fixed;
-            width: 100%;
-            top: 0;
-            z-index: 1000;
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            padding: 25px 40px;
+            color: white;
+            border-bottom: 2px solid var(--border);
         }
 
-        .navbar-brand-modern {
+        .header h1 {
+            font-size: 32px;
             font-weight: 700;
-            font-size: 1.5rem;
-            background: var(--primary-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            margin: 0;
         }
 
-        /* Hero Section */
-        .hero-section {
-            padding: 140px 0 80px;
-            background: var(--primary-gradient);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .hero-section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%23ffffff" fill-opacity="0.1" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,133.3C960,128,1056,96,1152,90.7C1248,85,1344,107,1392,117.3L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>') no-repeat bottom;
-            background-size: cover;
-        }
-
-        .hero-title {
-            font-size: 3.5rem;
-            font-weight: 800;
-            margin-bottom: 1.5rem;
-            text-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        }
-
-        .hero-subtitle {
-            font-size: 1.3rem;
-            opacity: 0.9;
-            margin-bottom: 2rem;
-            font-weight: 300;
-        }
-
-        /* Step Cards */
-        .step-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
-            padding: 2.5rem;
-            margin-bottom: 2rem;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .step-card:hover {
-            transform: translateY(-10px);
-            border-color: var(--accent-blue);
-            box-shadow: 0 20px 40px rgba(79, 172, 254, 0.2);
-        }
-
-        .step-number {
-            position: absolute;
-            top: -10px;
-            left: -10px;
-            width: 60px;
-            height: 60px;
-            background: var(--primary-gradient);
-            border-radius: 50%;
+        .content {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            font-weight: 700;
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+            min-height: calc(100vh - 80px);
         }
 
-        .step-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            color: var(--text-primary);
-        }
-
-        .step-description {
-            color: var(--text-secondary);
-            font-size: 1rem;
-            line-height: 1.6;
-            margin-bottom: 1.5rem;
-        }
-
-        /* AI Analysis Section */
-        .analysis-container {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
-            padding: 3rem;
-            margin-top: -50px;
-            position: relative;
-            z-index: 10;
-        }
-
-        .analysis-input {
-            background: rgba(255, 255, 255, 0.05);
-            border: 2px solid var(--border-color);
-            border-radius: 15px;
-            padding: 1.5rem;
-            color: var(--text-primary);
-            font-size: 1.1rem;
-            resize: vertical;
-            min-height: 150px;
-            transition: all 0.3s ease;
-            width: 100%;
-        }
-
-        .analysis-input:focus {
-            outline: none;
-            border-color: var(--accent-blue);
-            background: rgba(255, 255, 255, 0.08);
-            box-shadow: 0 0 0 4px rgba(79, 172, 254, 0.1);
-        }
-
-        .analysis-input::placeholder {
-            color: var(--text-secondary);
-            opacity: 0.6;
-        }
-
-        /* Results Cards */
-        .result-card {
-            background: linear-gradient(135deg, rgba(79, 172, 254, 0.1), rgba(118, 75, 162, 0.1));
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
-            padding: 2rem;
-            margin-bottom: 1.5rem;
-            backdrop-filter: blur(10px);
-        }
-
-        .result-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            color: var(--accent-blue);
-        }
-
-        .artisan-type-badge {
-            display: inline-block;
-            background: var(--primary-gradient);
-            padding: 0.5rem 1.5rem;
-            border-radius: 50px;
-            font-weight: 600;
-            font-size: 1.1rem;
-            margin-bottom: 1rem;
-        }
-
-        .confidence-meter {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            height: 8px;
-            margin: 1rem 0;
-            overflow: hidden;
-        }
-
-        .confidence-fill {
-            height: 100%;
-            background: var(--success-gradient);
-            border-radius: 10px;
-            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        /* Supplier Cards */
-        .supplier-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border-color);
-            border-radius: 15px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-
-        .supplier-card:hover {
-            background: rgba(255, 255, 255, 0.06);
-            transform: translateX(5px);
-            border-color: var(--accent-blue);
-        }
-
-        .supplier-name {
-            font-size: 1.2rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .supplier-category {
-            display: inline-block;
-            background: rgba(79, 172, 254, 0.2);
-            color: var(--accent-blue);
-            padding: 0.25rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            margin-bottom: 0.5rem;
-        }
-
-        /* Priority Items */
-        .priority-item {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            padding: 1rem;
-            margin-bottom: 0.75rem;
-            border-left: 4px solid;
-            transition: all 0.3s ease;
-        }
-
-        .priority-item:hover {
-            background: rgba(255, 255, 255, 0.08);
-            transform: translateX(3px);
-        }
-
-        .priority-critical {
-            border-left-color: #ff4757;
-        }
-
-        .priority-high {
-            border-left-color: #ffa502;
-        }
-
-        .priority-medium {
-            border-left-color: #3742fa;
-        }
-
-        /* Loading States */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-        }
-
-        .loading-content {
-            text-align: center;
-        }
-
-        .ai-spinner {
-            width: 60px;
-            height: 60px;
-            border: 4px solid rgba(79, 172, 254, 0.2);
-            border-top: 4px solid var(--accent-blue);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 1rem;
-        }
-
-        .loading-text {
-            font-size: 1.1rem;
-            color: var(--text-secondary);
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* Workflow Progress */
-        .workflow-progress {
-            background: var(--card-bg);
-            border-radius: 20px;
-            padding: 2rem;
-            margin: 2rem 0;
-            border: 1px solid var(--border-color);
-        }
-
-        .progress-step {
-            display: flex;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            opacity: 0.5;
-            transition: all 0.3s ease;
-        }
-
-        .progress-step.active {
-            opacity: 1;
-        }
-
-        .progress-step.completed {
-            opacity: 0.8;
-        }
-
-        .progress-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 1rem;
-            font-size: 1.2rem;
-        }
-
-        .progress-step.active .progress-icon {
-            background: var(--primary-gradient);
-            box-shadow: 0 0 20px rgba(79, 172, 254, 0.4);
-        }
-
-        .progress-text {
+        .form-area {
             flex: 1;
+            padding: 40px;
+            overflow-y: auto;
         }
 
-        .progress-title {
+        .form-section {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-size: 16px;
             font-weight: 600;
-            margin-bottom: 0.25rem;
+            margin-bottom: 20px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .progress-description {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
+        .form-group {
+            margin-bottom: 15px;
         }
 
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .hero-title {
-                font-size: 2.5rem;
-            }
-            
-            .hero-subtitle {
-                font-size: 1.1rem;
-            }
-            
-            .step-card {
-                padding: 1.5rem;
-            }
-            
-            .analysis-container {
-                padding: 2rem 1rem;
-            }
+        .form-group label {
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            display: block;
         }
 
-        /* Animations */
-        .fade-in-up {
-            animation: fadeInUp 0.6s ease-out;
+        .form-control,
+        .form-select {
+            background: #0d0d0d;
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 13px;
         }
 
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
+        .form-control:focus,
+        .form-select:focus {
+            background: #0d0d0d;
+            border-color: var(--primary);
+            color: var(--text);
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .btn-analyze {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border: none;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .btn-analyze:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(255, 107, 53, 0.3);
+            color: white;
+        }
+
+        .side-panel {
+            position: fixed;
+            right: -450px;
+            top: 0;
+            width: 450px;
+            height: 100vh;
+            background: var(--card);
+            border-left: 1px solid var(--border);
+            padding: 20px;
+            overflow-y: auto;
+            transition: right 0.3s ease;
+            z-index: 1000;
+            padding-top: 80px;
+        }
+
+        .side-panel.active {
+            right: 0;
+        }
+
+        .side-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .side-panel::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+
+        .panel-section {
+            margin-bottom: 25px;
+        }
+
+        .panel-section-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .item-card {
+            background: #0d0d0d;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+
+        .item-card:hover {
+            border-color: var(--primary);
+            background: rgba(255, 107, 53, 0.05);
+        }
+
+        .item-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 13px;
+        }
+
+        .item-description {
+            font-size: 12px;
+            opacity: 0.7;
+            margin-bottom: 5px;
+        }
+
+        .item-contact {
+            font-size: 11px;
+            color: var(--primary);
+            word-break: break-all;
+        }
+
+        .toggle-btn {
+            position: fixed;
+            right: 30px;
+            bottom: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 999;
+            transition: all 0.3s;
+            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .toggle-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .toggle-btn.active {
+            right: 460px;
+        }
+
+        .status-message {
+            background: rgba(255, 107, 53, 0.1);
+            border-left: 3px solid var(--primary);
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            margin-top: 10px;
+        }
+
+        .status-message.success {
+            background: rgba(76, 175, 80, 0.1);
+            border-color: #4CAF50;
+            color: #4CAF50;
+        }
+
+        .status-message.error {
+            background: rgba(244, 67, 54, 0.1);
+            border-color: #f44336;
+            color: #f44336;
+        }
+
+        .empty-state {
+            padding: 30px;
+            text-align: center;
+            opacity: 0.5;
+            font-size: 13px;
+        }
+
+        @media (max-width: 1024px) {
+            .form-row {
+                grid-template-columns: 1fr;
             }
-            to {
-                opacity: 1;
-                transform: translateY(0);
+
+            .side-panel {
+                width: 350px;
+                right: -350px;
             }
-        }
 
-        .pulse {
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.7; }
-            100% { opacity: 1; }
+            .toggle-btn.active {
+                right: 360px;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="loading-content">
-            <div class="ai-spinner"></div>
-            <div class="loading-text">AI is analyzing your craft...</div>
+
+<div class="header">
+    <h1><i class="bi bi-palette-fill"></i> ArtisanHub</h1>
+    <small id="subtitle" style="opacity: 0.9;">Business Growth Dashboard</small>
+</div>
+
+<div class="content">
+    <!-- Form Area -->
+    <div class="form-area">
+        <!-- Personal -->
+        <div class="form-section">
+            <div class="section-title">
+                <i class="bi bi-person-circle"></i> Personal Information
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Your Name</label>
+                    <input type="text" class="form-control" id="name" placeholder="Full name" onchange="updateDisplay()">
+                </div>
+                <div class="form-group">
+                    <label>Age</label>
+                    <input type="number" class="form-control" id="age" placeholder="Age">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Craft Experience (Years)</label>
+                <input type="number" class="form-control" id="experience" placeholder="Years">
+            </div>
+        </div>
+
+        <!-- Craft -->
+        <div class="form-section">
+            <div class="section-title">
+                <i class="bi bi-hammer"></i> Your Craft
+            </div>
+            <div class="form-group">
+                <label>Craft Type</label>
+                <select class="form-select" id="craftType" onchange="updateDisplay()">
+                    <option value="">Select your craft...</option>
+                    <option value="pottery">Pottery & Ceramics</option>
+                    <option value="carpenter">Carpentry & Woodwork</option>
+                    <option value="weaver">Weaving & Textiles</option>
+                    <option value="jeweler">Jewelry Making</option>
+                    <option value="metalworker">Metalworking</option>
+                    <option value="painter">Painting & Art</option>
+                    <option value="leather">Leather Crafts</option>
+                    <option value="glass">Glass Arts</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>What Do You Create?</label>
+                <textarea class="form-control" id="description" rows="3" placeholder="Describe your creations..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Special Techniques</label>
+                <input type="text" class="form-control" id="specialties" placeholder="E.g., hand-thrown, glazing">
+            </div>
+        </div>
+
+        <!-- Location -->
+        <div class="form-section">
+            <div class="section-title">
+                <i class="bi bi-geo-alt"></i> Location
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>City</label>
+                    <input type="text" class="form-control" id="city" placeholder="City">
+                </div>
+                <div class="form-group">
+                    <label>State</label>
+                    <input type="text" class="form-control" id="state" placeholder="State">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Workspace Size</label>
+                <select class="form-select" id="workspace">
+                    <option value="">Select...</option>
+                    <option value="none">None (starting)</option>
+                    <option value="small">Small (10x10 ft)</option>
+                    <option value="medium">Medium (15x15 ft)</option>
+                    <option value="large">Large (20x20 ft+)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Business -->
+        <div class="form-section">
+            <div class="section-title">
+                <i class="bi bi-briefcase"></i> Business Goals
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Current Income (₹/month)</label>
+                    <input type="number" class="form-control" id="income" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label>Target Income (₹/month)</label>
+                    <input type="number" class="form-control" id="targetIncome" placeholder="50000">
+                </div>
+            </div>
+            <button class="btn-analyze" onclick="analyzeProfile()">
+                <i class="bi bi-lightning-fill"></i> Analyze Profile
+            </button>
+            <div id="statusMessage"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Side Panel -->
+<div class="side-panel" id="sidePanel">
+    <!-- Materials -->
+    <div class="panel-section">
+        <div class="panel-section-title">
+            <i class="bi bi-box2"></i> Materials & Equipment
+        </div>
+        <div id="materialsList">
+            <div class="empty-state">Complete form and analyze to see equipment needed</div>
         </div>
     </div>
 
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-modern">
-        <div class="container">
-            <a class="navbar-brand navbar-brand-modern" href="#">
-                <i class="bi bi-cpu"></i> ArtisanHub Intelligence
-            </a>
+    <!-- Suppliers -->
+    <div class="panel-section">
+        <div class="panel-section-title">
+            <i class="bi bi-telephone"></i> Suppliers & Contacts
         </div>
-    </nav>
-
-    <!-- Hero Section -->
-    <section class="hero-section">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-lg-6">
-                    <h1 class="hero-title animate__animated animate__fadeInLeft">
-                        AI-Powered Craftsmen Intelligence
-                    </h1>
-                    <p class="hero-subtitle animate__animated animate__fadeInLeft animate__delay-1s">
-                        Describe your work once. Our AI automatically identifies your craft, 
-                        understands your needs, and connects you with the right suppliers.
-                    </p>
-                </div>
-                <div class="col-lg-6">
-                    <div class="animate__animated animate__fadeInRight">
-                        <div class="analysis-container">
-                            <h3 class="text-center mb-4">Tell us about your craft</h3>
-                            <textarea 
-                                id="craftDescription" 
-                                class="analysis-input" 
-                                placeholder="Describe your work in detail...&#10;&#10;For example: 'I build custom furniture from reclaimed wood, specializing in dining tables and bookshelves. I work in my garage workshop and use both hand tools and some power tools. I'm currently working on a large oak dining table project.'"
-                            ></textarea>
-                            <div class="text-center mt-4">
-                                <button onclick="analyzeCraft()" class="btn btn-lg btn-primary" style="background: var(--primary-gradient); border: none; border-radius: 50px; padding: 1rem 3rem; font-weight: 600;">
-                                    <i class="bi bi-cpu"></i> Analyze My Craft
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div id="suppliersList">
+            <div class="empty-state">Supplier information appears here</div>
         </div>
-    </section>
+    </div>
 
-    <!-- Workflow Progress -->
-    <section class="container mt-5">
-        <div class="workflow-progress">
-            <div class="progress-step" id="step1">
-                <div class="progress-icon">
-                    <i class="bi bi-robot"></i>
-                </div>
-                <div class="progress-text">
-                    <div class="progress-title">AI Analysis</div>
-                    <div class="progress-description">Understanding your craft and requirements</div>
-                </div>
-            </div>
-            <div class="progress-step" id="step2">
-                <div class="progress-icon">
-                    <i class="bi bi-search"></i>
-                </div>
-                <div class="progress-text">
-                    <div class="progress-title">Supplier Discovery</div>
-                    <div class="progress-description">Finding the best suppliers for your needs</div>
-                </div>
-            </div>
-            <div class="progress-step" id="step3">
-                <div class="progress-icon">
-                    <i class="bi bi-clipboard-check"></i>
-                </div>
-                <div class="progress-text">
-                    <div class="progress-title">Needs Assessment</div>
-                    <div class="progress-description">Prioritizing tools and materials</div>
-                </div>
-            </div>
-            <div class="progress-step" id="step4">
-                <div class="progress-icon">
-                    <i class="bi bi-truck"></i>
-                </div>
-                <div class="progress-text">
-                    <div class="progress-title">Smart Sourcing</div>
-                    <div class="progress-description">Optimized procurement recommendations</div>
-                </div>
-            </div>
+    <!-- Growth -->
+    <div class="panel-section">
+        <div class="panel-section-title">
+            <i class="bi bi-graph-up"></i> Growth Strategies
         </div>
-    </section>
-
-    <!-- Results Section -->
-    <section class="container py-5" id="resultsSection" style="display: none;">
-        <div class="row">
-            <!-- AI Analysis Results -->
-            <div class="col-lg-6 mb-4">
-                <div class="result-card fade-in-up">
-                    <h4 class="result-title">
-                        <i class="bi bi-cpu"></i> AI Analysis Results
-                    </h4>
-                    <div id="analysisResults">
-                        <!-- Results will be populated here -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Priority Needs -->
-            <div class="col-lg-6 mb-4">
-                <div class="result-card fade-in-up">
-                    <h4 class="result-title">
-                        <i class="bi bi-exclamation-triangle"></i> Priority Needs
-                    </h4>
-                    <div id="priorityNeeds">
-                        <!-- Priority items will be populated here -->
-                    </div>
-                </div>
-            </div>
+        <div id="growthList">
+            <div class="empty-state">Growth options for your business</div>
         </div>
+    </div>
 
-        <!-- Suppliers Section -->
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="result-card fade-in-up">
-                    <h4 class="result-title">
-                        <i class="bi bi-shop"></i> Intelligent Supplier Matching
-                    </h4>
-                    <div id="supplierResults">
-                        <!-- Suppliers will be populated here -->
-                    </div>
-                </div>
-            </div>
+    <!-- Events -->
+    <div class="panel-section">
+        <div class="panel-section-title">
+            <i class="bi bi-calendar-event"></i> Markets & Events
         </div>
-
-        <!-- Recommendations Section -->
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="result-card fade-in-up">
-                    <h4 class="result-title">
-                        <i class="bi bi-lightbulb"></i> AI Recommendations
-                    </h4>
-                    <div id="recommendations">
-                        <!-- Recommendations will be populated here -->
-                    </div>
-                </div>
-            </div>
+        <div id="eventsList">
+            <div class="empty-state">Selling opportunities in your area</div>
         </div>
-    </section>
+    </div>
+</div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <script>
-        let currentAnalysis = null;
-        let currentSuppliers = [];
+<!-- Toggle Button -->
+<button class="toggle-btn" id="toggleBtn" onclick="togglePanel()">
+    <i class="bi bi-card-list"></i>
+</button>
 
-        async function analyzeCraft() {
-            const description = document.getElementById('craftDescription').value.trim();
-            
-            if (!description || description.length < 20) {
-                showNotification('Please provide a more detailed description of your craft (at least 20 characters)', 'warning');
-                return;
+<script>
+    function updateDisplay() {
+        const name = document.getElementById('name').value || 'Welcome';
+        const craft = document.getElementById('craftType').value || 'Select craft';
+        const craftLabels = {
+            'pottery': 'Pottery',
+            'carpenter': 'Carpentry',
+            'weaver': 'Weaving',
+            'jeweler': 'Jewelry',
+            'metalworker': 'Metalworking',
+            'painter': 'Painting',
+            'leather': 'Leather',
+            'glass': 'Glass Arts'
+        };
+        document.getElementById('subtitle').textContent = `${name} - ${craftLabels[craft] || 'Select your craft'}`;
+    }
+
+    function togglePanel() {
+        const panel = document.getElementById('sidePanel');
+        const btn = document.getElementById('toggleBtn');
+        panel.classList.toggle('active');
+        btn.classList.toggle('active');
+    }
+
+    async function analyzeProfile() {
+        const name = document.getElementById('name').value;
+        const craftType = document.getElementById('craftType').value;
+        const city = document.getElementById('city').value;
+        const state = document.getElementById('state').value;
+
+        if (!name || !craftType || !city || !state) {
+            showStatus('Please fill Name, Craft, City, State', 'error');
+            return;
+        }
+
+        showStatus('Analyzing...', 'loading');
+
+        try {
+            const response = await fetch('/api/analyze-artisan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name, craft_type: craftType, city, state,
+                    description: document.getElementById('description').value,
+                    age: document.getElementById('age').value,
+                    experience: document.getElementById('experience').value,
+                    specialties: document.getElementById('specialties').value,
+                    workspace: document.getElementById('workspace').value,
+                    current_income: document.getElementById('income').value,
+                    target_income: document.getElementById('targetIncome').value
+                })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                populatePanel(data, craftType);
+                showStatus('Done! Check the panel ->', 'success');
+                setTimeout(() => {
+                    if (!document.getElementById('sidePanel').classList.contains('active')) {
+                        togglePanel();
+                    }
+                }, 500);
+            } else {
+                showStatus('Error: ' + data.error, 'error');
             }
-
-            showLoading();
-            updateWorkflowProgress('step1', 'active');
-
-            try {
-                const response = await fetch('/api/artisan-analysis', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ description })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    currentAnalysis = result.analysis;
-                    currentSuppliers = result.suppliers;
-                    
-                    // Simulate step-by-step progression
-                    await delay(1000);
-                    updateWorkflowProgress('step1', 'completed');
-                    updateWorkflowProgress('step2', 'active');
-                    
-                    await delay(1000);
-                    updateWorkflowProgress('step2', 'completed');
-                    updateWorkflowProgress('step3', 'active');
-                    
-                    await delay(1000);
-                    updateWorkflowProgress('step3', 'completed');
-                    updateWorkflowProgress('step4', 'active');
-                    
-                    await delay(1000);
-                    updateWorkflowProgress('step4', 'completed');
-
-                    displayResults(result);
-                    hideLoading();
-                } else {
-                    hideLoading();
-                    showNotification('Analysis failed: ' + (result.error || 'Unknown error'), 'error');
-                }
-            } catch (error) {
-                hideLoading();
-                showNotification('Network error. Please try again.', 'error');
-                console.error('Analysis error:', error);
-            }
+        } catch (error) {
+            showStatus('Error: ' + error.message, 'error');
         }
+    }
 
-        function displayResults(result) {
-            const analysis = result.analysis;
-            const suppliers = result.suppliers;
+    function populatePanel(data, craft) {
+        // Materials by craft
+        const materials = {
+            'pottery': [
+                {name: 'Pottery Clay', desc: '₹2,000-5,000/bag'},
+                {name: 'Kiln', desc: '₹50,000-200,000'},
+                {name: 'Pottery Wheel', desc: '₹10,000-30,000'},
+                {name: 'Glazes', desc: '₹500-1,500/type'},
+                {name: 'Workspace', desc: '20x20 ft'},
+                {name: 'Drying Racks', desc: '₹5,000-15,000'},
+                {name: 'Tools Set', desc: '₹3,000-8,000'}
+            ],
+            'carpenter': [
+                {name: 'Wood', desc: '₹500-2,000/board'},
+                {name: 'Power Saw', desc: '₹10,000-50,000'},
+                {name: 'Lathe', desc: '₹20,000-100,000'},
+                {name: 'Chisels', desc: '₹5,000-15,000'},
+                {name: 'Sanders', desc: '₹3,000-25,000'},
+                {name: 'Clamps', desc: '₹2,000-8,000'},
+                {name: 'Finishes', desc: '₹500-1,500/liter'}
+            ]
+        };
 
-            // Show results section
-            document.getElementById('resultsSection').style.display = 'block';
-            
-            // Display AI Analysis
-            document.getElementById('analysisResults').innerHTML = `
-                <div class="artisan-type-badge mb-3">
-                    <i class="bi bi-person-badge"></i> ${analysis.artisan_type.replace('_', ' ').toUpperCase()}
-                </div>
-                <div class="mb-3">
-                    <strong>Confidence:</strong>
-                    <div class="confidence-meter">
-                        <div class="confidence-fill" style="width: ${analysis.confidence}%"></div>
-                    </div>
-                    <small>${analysis.confidence}% match confidence</small>
-                </div>
-                <div class="mb-3">
-                    <strong>Identified Keywords:</strong>
-                    <div class="mt-2">
-                        ${analysis.identified_keywords.map(keyword => 
-                            `<span class="badge bg-secondary me-2">${keyword}</span>`
-                        ).join('')}
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <strong>Estimated Budget Range:</strong> ${analysis.needs_assessment.estimated_budget_range}
-                </div>
-            `;
+        const mats = materials[craft] || materials['pottery'];
+        document.getElementById('materialsList').innerHTML = mats.map(m =>
+            `<div class="item-card"><div class="item-title">${m.name}</div><div class="item-description">${m.desc}</div></div>`
+        ).join('');
 
-            // Display Priority Needs
-            const priorityNeeds = analysis.needs_assessment.priority_needs || [];
-            document.getElementById('priorityNeeds').innerHTML = priorityNeeds.map(item => `
-                <div class="priority-item priority-${item.priority}">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>${item.item}</strong>
-                            <br>
-                            <small class="text-muted">Category: ${item.category}</small>
-                        </div>
-                        <span class="badge bg-${getPriorityColor(item.priority)}">${item.priority.toUpperCase()}</span>
-                    </div>
-                </div>
-            `).join('');
-
-            // Display Suppliers
-            document.getElementById('supplierResults').innerHTML = suppliers.map((supplier, index) => `
-                <div class="supplier-card" onclick="selectSupplier('${supplier.name}')">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <div class="supplier-name">${supplier.name}</div>
-                            <div class="supplier-category">${supplier.category.replace('_', ' ').toUpperCase()}</div>
-                            <small class="text-muted">Relevance: ${Math.round(supplier.relevance_score * 100)}% | Delivery: ${supplier.estimated_delivery}</small>
-                        </div>
-                        <div class="text-end">
-                            <span class="badge bg-success">Available</span>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-
-            // Display Recommendations
-            const needs = analysis.needs_assessment;
-            document.getElementById('recommendations').innerHTML = `
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6>Primary Tools Needed:</h6>
-                        <ul class="list-unstyled">
-                            ${needs.primary_tools.map(tool => `<li>• ${tool.replace('_', ' ').toUpperCase()}</li>`).join('')}
-                        </ul>
-                    </div>
-                    <div class="col-md-6">
-                        <h6>Essential Materials:</h6>
-                        <ul class="list-unstyled">
-                            ${needs.essential_materials.map(material => `<li>• ${material.replace('_', ' ').toUpperCase()}</li>`).join('')}
-                        </ul>
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <h6>Workflow Suggestions:</h6>
-                    <ul class="list-unstyled">
-                        ${needs.workflow_suggestions.map(suggestion => `<li>• ${suggestion}</li>`).join('')}
-                    </ul>
-                </div>
-            `;
-
-            // Scroll to results
-            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
-        }
-
-        function updateWorkflowProgress(stepId, status) {
-            const step = document.getElementById(stepId);
-            step.classList.remove('active', 'completed');
-            step.classList.add(status);
-        }
-
-        function getPriorityColor(priority) {
-            const colors = {
-                'critical': 'danger',
-                'high': 'warning',
-                'medium': 'info',
-                'low': 'secondary'
-            };
-            return colors[priority] || 'secondary';
-        }
-
-        function selectSupplier(supplierName) {
-            showNotification(`Selected supplier: ${supplierName}`, 'success');
-        }
-
-        function showLoading() {
-            document.getElementById('loadingOverlay').style.display = 'flex';
-        }
-
-        function hideLoading() {
-            document.getElementById('loadingOverlay').style.display = 'none';
-        }
-
-        function showNotification(message, type = 'info') {
-            // Simple notification (you could enhance this with a proper toast system)
-            console.log(`[${type.toUpperCase()}] ${message}`);
-            // For demo purposes, you could add a toast notification here
-        }
-
-        function delay(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
-
-        // Auto-resize textarea
-        document.getElementById('craftDescription').addEventListener('input', function() {
-            this.style.height = 'auto';
-            this.style.height = this.scrollHeight + 'px';
-        });
-
-        // Add example descriptions for testing
-        const exampleDescriptions = [
-            "I build custom furniture from reclaimed wood, specializing in dining tables and bookshelves. I work in my garage workshop and use both hand tools and some power tools.",
-            "I'm a jeweler working with precious metals and gemstones. I create custom engagement rings and bracelets in my small studio apartment.",
-            "I'm a potter who creates ceramic vases and bowls on a pottery wheel. I have a small kiln in my basement workshop.",
-            "I weld metal sculptures and industrial art pieces. I work in a large warehouse space and need various metal supplies.",
-            "I sew custom clothing and accessories. I work from home and need various fabrics and sewing supplies."
+        // Suppliers
+        const suppliers = [
+            {name: 'Amazon.in', type: 'Online Marketplace', link: 'amazon.in'},
+            {name: 'Flipkart', type: 'Online Marketplace', link: 'flipkart.com'},
+            {name: 'Local Suppliers', type: 'Local Dealers', link: 'Google Maps'},
+            {name: 'Alibaba', type: 'Wholesale/Import', link: 'alibaba.com'},
+            {name: 'Trade Portals', type: 'B2B', link: 'Local sites'},
+            {name: 'Craft Suppliers', type: 'Specialized', link: 'Search locally'}
         ];
 
-        // Add random example on page load (for demo purposes)
-        window.addEventListener('load', function() {
-            const randomExample = exampleDescriptions[Math.floor(Math.random() * exampleDescriptions.length)];
-            document.getElementById('craftDescription').value = randomExample;
-        });
-    </script>
+        document.getElementById('suppliersList').innerHTML = suppliers.map(s =>
+            `<div class="item-card"><div class="item-title">${s.name}</div><div class="item-description">${s.type}</div><div class="item-contact">🔗 ${s.link}</div></div>`
+        ).join('');
+
+        // Growth from API
+        const growth = data.growth_potential?.growth_strategies || [];
+        const growthHTML = growth.length > 0 ? growth.map(g =>
+            `<div class="item-card"><div class="item-title">${g.strategy}</div><div class="item-description">Investment: ${g.investment_required}</div><div class="item-description">Return: ${g.expected_return}</div><div class="item-description" style="opacity: 0.6; font-size: 11px;">Timeline: ${g.time_to_implement}</div></div>`
+        ).join('') : '<div class="empty-state">No growth data available</div>';
+        document.getElementById('growthList').innerHTML = growthHTML;
+
+        // Events from API
+        const events = data.opportunities || [];
+        const eventHTML = events.length > 0 ? events.map(e =>
+            `<div class="item-card"><div class="item-title">${e.name}</div><div class="item-description">${e.dates}</div><div class="item-description">Fee: ${e.participation_fee}</div><div class="item-contact">📍 ${e.location}</div><div class="item-contact">☎️ ${e.contact_info.phone}</div></div>`
+        ).join('') : '<div class="empty-state">No events found</div>';
+        document.getElementById('eventsList').innerHTML = eventHTML;
+    }
+
+    function showStatus(msg, type) {
+        const statusDiv = document.getElementById('statusMessage');
+        statusDiv.innerHTML = `<div class="status-message ${type}">${msg}</div>`;
+        if (type !== 'loading') setTimeout(() => statusDiv.innerHTML = '', 5000);
+    }
+</script>
+
 </body>
 </html>

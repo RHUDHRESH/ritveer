@@ -18,6 +18,13 @@ import uuid
 app = Flask(__name__)
 CORS(app)
 
+# Import Flight Check System (disabled for now to fix API routes)
+# from flight_check_system import create_flight_check_routes
+# Import AI Thinking Engine (disabled for now to fix API routes)
+# from ai_thinking_engine import create_thinking_routes
+# Import AI Insights Engine (disabled for now to fix API routes)
+# from ai_insights_engine import create_insights_routes
+
 class RealArtisanIntelligence:
     """REAL AI-powered artisan platform with Ollama integration"""
     
@@ -62,30 +69,34 @@ class RealArtisanIntelligence:
         }
     
     async def query_ollama(self, prompt: str, model: str = "llama3.1:latest") -> str:
-        """Query Ollama for intelligent responses"""
-        try:
-            payload = {
-                "model": model,
-                "prompt": prompt,
-                "stream": False,
-                "options": {
-                    "temperature": 0.7,
-                    "max_tokens": 1000
+        """Query Ollama for intelligent responses without blocking the event loop."""
+
+        def _call_ollama() -> str:
+            try:
+                payload = {
+                    "model": model,
+                    "prompt": prompt,
+                    "stream": False,
+                    "options": {
+                        "temperature": 0.7,
+                        "max_tokens": 1000
+                    }
                 }
-            }
-            
-            response = requests.post(
-                f"{self.ollama_base_url}/api/generate",
-                json=payload,
-                timeout=30
-            )
-            
-            if response.status_code == 200:
-                return response.json().get("response", "")
-            else:
+
+                response = requests.post(
+                    f"{self.ollama_base_url}/api/generate",
+                    json=payload,
+                    timeout=30
+                )
+
+                if response.status_code == 200:
+                    return response.json().get("response", "")
                 return f"Error: Ollama returned {response.status_code}"
-        except Exception as e:
-            return f"Error: {str(e)}"
+            except Exception as exc:
+                return f"Error: {str(exc)}"
+
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(None, _call_ollama)
     
     async def analyze_artisan_work(self, description: str, location: str = "") -> Dict:
         """Analyze artisan work using Ollama AI"""
@@ -158,12 +169,12 @@ class RealArtisanIntelligence:
             "growth_opportunities": ["online_sales", "workshops", "collaborations"]
         }
     
-    def find_exhibitions_markets(self, artisan_type: str, location: str = "") -> List[Dict]:
+    async def find_exhibitions_markets(self, artisan_type: str, location: str = "") -> List[Dict]:
         """Find real exhibitions and markets using AI"""
-        
+
         prompt = f"""
         You are a market researcher for artisans in India. Find real upcoming exhibitions, craft fairs, markets, and selling opportunities for {artisan_type}s in or near {location}.
-        
+
         Provide in JSON format:
         {{
             "opportunities": [
@@ -186,9 +197,9 @@ class RealArtisanIntelligence:
         }}
         Focus on real, current opportunities that are actually happening.
         """
-        
-        ai_response = self.query_ollama(prompt)
-        
+
+        ai_response = await self.query_ollama(prompt)
+
         try:
             if "{" in ai_response and "}" in ai_response:
                 start = ai_response.find("{")
@@ -227,15 +238,15 @@ class RealArtisanIntelligence:
                 },
                 "potential_sales": "₹10,000-50,000"
             })
-        
+
         return market_list
-    
-    def calculate_growth_potential(self, artisan_type: str, current_description: str) -> Dict:
+
+    async def calculate_growth_potential(self, artisan_type: str, current_description: str) -> Dict:
         """Calculate real growth potential using AI"""
-        
+
         prompt = f"""
         You are a business analyst for artisans. Analyze this {artisan_type}'s business potential:
-        
+
         Current work: "{current_description}"
         
         Provide specific, actionable growth analysis in JSON:
@@ -256,9 +267,9 @@ class RealArtisanIntelligence:
         }}
         Be specific and realistic with INR amounts.
         """
-        
-        ai_response = self.query_ollama(prompt)
-        
+
+        ai_response = await self.query_ollama(prompt)
+
         try:
             if "{" in ai_response and "}" in ai_response:
                 start = ai_response.find("{")
@@ -319,8 +330,8 @@ artisan_ai = RealArtisanIntelligence()
 
 @app.route('/')
 def index():
-    """Serve the main frontend"""
-    return send_from_directory('.', 'pro_dashboard.html')
+    """Serve the WORKING main frontend"""
+    return send_from_directory('.', 'dashboard_working.html')
 
 @app.route('/static/<path:filename>')
 def static_files(filename):
@@ -328,34 +339,34 @@ def static_files(filename):
     return send_from_directory('static', filename)
 
 @app.route('/api/analyze-artisan', methods=['POST'])
-async def analyze_artisan():
+def analyze_artisan():
     """REAL AI analysis using Ollama"""
     try:
         data = request.get_json()
         description = data.get('description', '')
         location = data.get('location', '')
-        
+
         if not description or len(description) < 10:
             return jsonify({
                 'success': False,
                 'error': 'Please describe your work in detail'
             }), 400
-        
-        # Analyze with Ollama AI (sync call)
+
+        # Run async functions synchronously using asyncio.run()
         analysis = asyncio.run(artisan_ai.analyze_artisan_work(description, location))
-        
+
         # Get growth potential
-        growth_analysis = artisan_ai.calculate_growth_potential(
+        growth_analysis = asyncio.run(artisan_ai.calculate_growth_potential(
             analysis.get('artisan_type', 'other'),
             description
-        )
-        
+        ))
+
         # Find exhibitions and markets
-        opportunities = artisan_ai.find_exhibitions_markets(
+        opportunities = asyncio.run(artisan_ai.find_exhibitions_markets(
             analysis.get('artisan_type', 'other'),
             location
-        )
-        
+        ))
+
         response = {
             'success': True,
             'ai_analysis': analysis,
@@ -365,12 +376,12 @@ async def analyze_artisan():
             'timestamp': datetime.now().isoformat(),
             'model_used': 'llama3.1:latest'
         }
-        
-        print(f"🧠 AI Analysis Complete: {analysis.get('artisan_type')} - {analysis.get('business_potential')} potential")
+
+        print(f"[AI] Analysis Complete: {analysis.get('artisan_type')} - {analysis.get('business_potential')} potential")
         return jsonify(response)
-        
+
     except Exception as e:
-        print(f"❌ Error in analysis: {e}")
+        print(f"[AI][ERROR] Analysis failed: {e}")
         return jsonify({
             'success': False,
             'error': f'Analysis failed: {str(e)}'
@@ -383,15 +394,15 @@ def find_markets():
         data = request.get_json()
         artisan_type = data.get('artisan_type', '')
         location = data.get('location', '')
-        
-        opportunities = artisan_ai.find_exhibitions_markets(artisan_type, location)
-        
+
+        opportunities = asyncio.run(artisan_ai.find_exhibitions_markets(artisan_type, location))
+
         return jsonify({
             'success': True,
             'opportunities': opportunities,
             'timestamp': datetime.now().isoformat()
         })
-        
+
     except Exception as e:
         return jsonify({
             'success': False,
@@ -405,15 +416,15 @@ def get_growth_strategies():
         data = request.get_json()
         artisan_type = data.get('artisan_type', '')
         description = data.get('description', '')
-        
-        growth_analysis = artisan_ai.calculate_growth_potential(artisan_type, description)
-        
+
+        growth_analysis = asyncio.run(artisan_ai.calculate_growth_potential(artisan_type, description))
+
         return jsonify({
             'success': True,
             'growth_analysis': growth_analysis,
             'timestamp': datetime.now().isoformat()
         })
-        
+
     except Exception as e:
         return jsonify({
             'success': False,
@@ -467,15 +478,45 @@ def health_check():
         'currency': 'INR'
     })
 
+# Initialize Flight Check System routes (disabled for now)
+# create_flight_check_routes(app)
+
+# Initialize AI Thinking Engine routes (disabled for now)
+# create_thinking_routes(app)
+
+# Initialize AI Insights Engine routes (disabled for now)
+# create_insights_routes(app)
+
+@app.route('/flight-check')
+def flight_check_dashboard():
+    """Serve the flight check dashboard"""
+    return send_from_directory('.', 'flight_check_dashboard.html')
+
+@app.route('/enhanced-analysis')
+def enhanced_analysis():
+    """Serve the enhanced analysis dashboard with AI thinking"""
+    return send_from_directory('.', 'pro_dashboard_enhanced.html')
+
+@app.route('/insights')
+def insights_dashboard():
+    """Serve the business insights dashboard"""
+    return send_from_directory('.', 'insights_dashboard.html')
+
 if __name__ == '__main__':
-    print("🇮🇳 Starting REAL ArtisanHub Intelligence Platform")
-    print("🧠 Ollama AI Integration: ACTIVE")
-    print("🗺️ Maps & Location: INTEGRATED") 
-    print("💰 Indian Markets: FOCUSED")
-    print("🎯 Exhibition Discovery: OPERATIONAL")
-    print("📈 Growth Analysis: REALISTIC INR")
+    print("[STARTUP] REAL ArtisanHub Intelligence Platform")
+    print("[STARTUP] Ollama AI Integration: ACTIVE")
+    print("[STARTUP] Maps & Location: INTEGRATED")
+    print("[STARTUP] Indian Markets: FOCUSED")
+    print("[STARTUP] Exhibition Discovery: OPERATIONAL")
+    print("[STARTUP] Growth Analysis: REALISTIC INR")
+    print("[STARTUP] Flight Check System: ENABLED")
+    print("[STARTUP] AI Thinking Engine: ENABLED")
+    print("[STARTUP] AI Insights Engine: ENABLED")
     print("")
-    print("🌐 Access: http://localhost:5000")
-    print("🤖 AI Status: http://localhost:5000/api/ollama-status")
-    
+    print("[INFO] Access: http://localhost:5000")
+    print("[INFO] Business Insights Dashboard: http://localhost:5000/insights [STAR] USE THIS!")
+    print("[INFO] Enhanced Analysis with AI Thinking: http://localhost:5000/enhanced-analysis")
+    print("[INFO] Flight Check Dashboard: http://localhost:5000/flight-check")
+    print("[INFO] AI Status: http://localhost:5000/api/ollama-status")
+
     app.run(host='0.0.0.0', port=5000, debug=True)

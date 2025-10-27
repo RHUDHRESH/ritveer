@@ -1,0 +1,762 @@
+# 🚀 KarigarAgent Lite: Production-Grade MVP Action Plan
+
+## 📋 **MASTER CHECKLIST - Your Path to Victory**
+
+---
+
+## **PHASE 1: Foundation Setup (Day 1 - Hours 1-4)**
+
+### 1.1 Project Structure ✅
+```bash
+# Create the foundation
+mkdir karigar-agent && cd karigar-agent
+mkdir -p src/karigar/{agents,tools,memory,schemas,api,config,orchestrators}
+touch src/karigar/__init__.py
+```
+
+**Files to create:**
+- [ ] `src/karigar/main.py` - FastAPI app entry point
+- [ ] `src/karigar/config/settings.py` - Pydantic settings
+- [ ] `.env.example` - Template for environment variables
+- [ ] `.gitignore` - Python, venv, secrets
+- [ ] `requirements.txt` - Dependencies
+- [ ] `Dockerfile` - Container setup
+- [ ] `docker-compose.yml` - Local dev environment
+
+### 1.2 Core Dependencies
+```txt
+# requirements.txt
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+langgraph==0.0.40
+langchain==0.1.0
+sqlalchemy==2.0.23
+aiosqlite==0.19.0
+python-multipart==0.0.6
+httpx==0.25.2
+pytest==7.4.3
+pytest-asyncio==0.21.1
+chromadb==0.4.18
+reportlab==4.0.7
+qrcode==7.4.2
+```
+
+---
+
+## **PHASE 2: Database & Memory Setup (Hours 5-6)**
+
+### 2.1 SQLite Schema Design ✅
+**File:** `src/karigar/schemas/models.py`
+
+```python
+from sqlalchemy import Column, String, Integer, Float, Text, DateTime, JSON, ForeignKey
+from sqlalchemy.ext.declarative import declarative_base
+from datetime import datetime
+
+Base = declarative_base()
+
+class Artisan(Base):
+    __tablename__ = "artisans"
+    id = Column(String, primary_key=True)
+    name = Column(String)
+    phone = Column(String)
+    location = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class MaterialRequest(Base):
+    __tablename__ = "material_requests"
+    id = Column(String, primary_key=True)
+    artisan_id = Column(String, ForeignKey("artisans.id"))
+    material = Column(String)
+    quantity = Column(Float)
+    budget = Column(Float)
+    timeline = Column(String)
+    status = Column(String)  # pending, quoted, ordered, delivered
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class SupplierQuote(Base):
+    __tablename__ = "supplier_quotes"
+    id = Column(String, primary_key=True)
+    request_id = Column(String, ForeignKey("material_requests.id"))
+    supplier_name = Column(String)
+    price = Column(Float)
+    delivery_days = Column(Integer)
+    rating = Column(Float)
+    selected = Column(Integer, default=0)
+
+class Order(Base):
+    __tablename__ = "orders"
+    id = Column(String, primary_key=True)
+    request_id = Column(String, ForeignKey("material_requests.id"))
+    quote_id = Column(String, ForeignKey("supplier_quotes.id"))
+    upi_link = Column(String)
+    po_path = Column(String)
+    status = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class MicroStore(Base):
+    __tablename__ = "micro_stores"
+    id = Column(String, primary_key=True)
+    artisan_id = Column(String, ForeignKey("artisans.id"))
+    product_name = Column(String)
+    price = Column(Float)
+    image_path = Column(String)
+    qr_code_path = Column(String)
+    store_url = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class Ledger(Base):
+    __tablename__ = "ledger"
+    id = Column(String, primary_key=True)
+    artisan_id = Column(String, ForeignKey("artisans.id"))
+    order_id = Column(String, ForeignKey("orders.id"))
+    type = Column(String)  # debit, credit
+    amount = Column(Float)
+    description = Column(Text)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+```
+
+**Checklist:**
+- [ ] Create `models.py` with all schemas
+- [ ] Create `src/karigar/memory/sql_memory.py` for DB connection
+- [ ] Create initialization script to set up tables
+- [ ] Test with dummy data
+
+### 2.2 Vector Memory (ChromaDB)
+**File:** `src/karigar/memory/vector_store.py`
+
+```python
+import chromadb
+from chromadb.config import Settings
+
+class VectorMemory:
+    def __init__(self, persist_directory="./chroma_data"):
+        self.client = chromadb.Client(Settings(
+            persist_directory=persist_directory,
+            anonymized_telemetry=False
+        ))
+        self.suppliers = self.client.get_or_create_collection("suppliers")
+        self.products = self.client.get_or_create_collection("products")
+    
+    def store_supplier(self, supplier_id, name, materials, pricing, rating):
+        doc = f"{name} supplies {materials} at {pricing}. Rating: {rating}"
+        self.suppliers.add(
+            documents=[doc],
+            ids=[supplier_id],
+            metadatas=[{"name": name, "rating": rating}]
+        )
+    
+    def search_suppliers(self, query, n_results=5):
+        results = self.suppliers.query(
+            query_texts=[query],
+            n_results=n_results
+        )
+        return results
+```
+
+**Checklist:**
+- [ ] Create `vector_store.py`
+- [ ] Initialize with sample supplier data
+- [ ] Test similarity search
+
+---
+
+## **PHASE 3: Custom Tools (No External APIs Needed) (Hours 7-10)**
+
+### 3.1 Supplier Search Tool (Perplexity Fallback)
+**File:** `src/karigar/tools/supplier_search.py`
+
+```python
+import httpx
+from typing import Optional
+
+class SupplierSearchTool:
+    def __init__(self, perplexity_api_key: Optional[str] = None):
+        self.api_key = perplexity_api_key
+        self.local_suppliers = self._load_local_suppliers()
+    
+    def _load_local_suppliers(self):
+        # Local supplier database (CSV/JSON)
+        return {
+            "cement": [
+                {"name": "BuildMart Delhi", "price": 350, "delivery": 2, "rating": 4.5},
+                {"name": "QuickSupply", "price": 380, "delivery": 1, "rating": 4.2}
+            ],
+            "bricks": [
+                {"name": "Brick Co", "price": 8, "delivery": 3, "rating": 4.7}
+            ]
+        }
+    
+    async def search(self, material: str, location: str) -> list:
+        # Try local first
+        results = self.local_suppliers.get(material.lower(), [])
+        
+        # Fallback to Perplexity if enabled and local results insufficient
+        if len(results) < 2 and self.api_key:
+            results.extend(await self._perplexity_search(material, location))
+        
+        return results
+    
+    async def _perplexity_search(self, material: str, location: str):
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                "https://api.perplexity.ai/chat/completions",
+                headers={"Authorization": f"Bearer {self.api_key}"},
+                json={
+                    "model": "llama-3.1-sonar-small-128k-online",
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": f"Find 3 suppliers for {material} in {location} with prices"
+                        }
+                    ]
+                }
+            )
+            # Parse and structure response
+            return self._parse_perplexity_response(response.json())
+```
+
+**Checklist:**
+- [ ] Create `supplier_search.py`
+- [ ] Add local supplier CSV/JSON file
+- [ ] Implement Perplexity fallback (optional)
+- [ ] Test with various materials
+
+### 3.2 UPI Link Generator
+**File:** `src/karigar/tools/payment_tools.py`
+
+```python
+from urllib.parse import quote
+
+class PaymentTools:
+    @staticmethod
+    def generate_upi_link(amount: float, upi_id: str, name: str, note: str):
+        base_url = "upi://pay"
+        params = f"?pa={upi_id}&pn={quote(name)}&am={amount}&tn={quote(note)}"
+        return base_url + params
+    
+    @staticmethod
+    def generate_qr_code(upi_link: str, save_path: str):
+        import qrcode
+        qr = qrcode.QRCode(version=1, box_size=10, border=4)
+        qr.add_data(upi_link)
+        qr.make(fit=True)
+        img = qr.make_image(fill_color="black", back_color="white")
+        img.save(save_path)
+        return save_path
+```
+
+### 3.3 PDF Generator (Purchase Orders)
+**File:** `src/karigar/tools/pdf_generator.py`
+
+```python
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+
+class PDFGenerator:
+    @staticmethod
+    def generate_po(order_data: dict, save_path: str):
+        c = canvas.Canvas(save_path, pagesize=letter)
+        c.setFont("Helvetica-Bold", 16)
+        c.drawString(100, 750, "PURCHASE ORDER")
+        
+        c.setFont("Helvetica", 12)
+        y_position = 700
+        for key, value in order_data.items():
+            c.drawString(100, y_position, f"{key}: {value}")
+            y_position -= 20
+        
+        c.save()
+        return save_path
+```
+
+### 3.4 Micro Store Generator
+**File:** `src/karigar/tools/store_generator.py`
+
+```python
+from pathlib import Path
+
+class StoreGenerator:
+    @staticmethod
+    def create_store_page(artisan_name: str, product: dict, output_dir: str):
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>{artisan_name}'s Store</title>
+            <style>
+                body {{ font-family: Arial; max-width: 600px; margin: 50px auto; padding: 20px; }}
+                .product {{ border: 1px solid #ddd; padding: 20px; border-radius: 8px; }}
+                img {{ max-width: 100%; height: auto; }}
+                .price {{ font-size: 24px; color: #2ecc71; font-weight: bold; }}
+                button {{ background: #3498db; color: white; padding: 15px 30px; border: none; 
+                          border-radius: 5px; cursor: pointer; font-size: 16px; }}
+            </style>
+        </head>
+        <body>
+            <div class="product">
+                <h1>{product['name']}</h1>
+                <img src="{product.get('image', 'placeholder.jpg')}" alt="{product['name']}">
+                <p class="price">₹{product['price']}</p>
+                <p>{product.get('description', '')}</p>
+                <button onclick="alert('Contact: {product.get('phone', 'N/A')}')">Buy Now</button>
+            </div>
+        </body>
+        </html>
+        """
+        
+        file_path = Path(output_dir) / f"{artisan_name.replace(' ', '_')}_store.html"
+        file_path.write_text(html)
+        return str(file_path)
+```
+
+**Checklist:**
+- [ ] Create all tool files
+- [ ] Test each tool independently
+- [ ] Add error handling
+- [ ] Document tool parameters
+
+---
+
+## **PHASE 4: Agent Implementation (Hours 11-14)**
+
+### 4.1 LangGraph State Definition
+**File:** `src/karigar/schemas/state.py`
+
+```python
+from typing import TypedDict, List, Optional
+from langgraph.graph.message import add_messages
+from typing import Annotated
+
+class KarigarState(TypedDict):
+    messages: Annotated[list, add_messages]
+    artisan_id: str
+    material_request: Optional[dict]
+    supplier_quotes: List[dict]
+    selected_quote: Optional[dict]
+    order_details: Optional[dict]
+    store_url: Optional[str]
+    status: str
+```
+
+### 4.2 Agents (One File Per Agent)
+
+**File:** `src/karigar/agents/intake_agent.py`
+```python
+from karigar.schemas.state import KarigarState
+from langchain_openai import ChatOpenAI
+
+class IntakeAgent:
+    def __init__(self, llm: ChatOpenAI):
+        self.llm = llm
+    
+    def process(self, state: KarigarState) -> dict:
+        user_input = state["messages"][-1].content
+        
+        prompt = f"""Extract structured data from:
+        {user_input}
+        
+        Return JSON with: material, quantity, budget, timeline, location"""
+        
+        response = self.llm.invoke(prompt)
+        # Parse response into structured dict
+        material_request = self._parse_response(response.content)
+        
+        return {"material_request": material_request, "status": "intake_complete"}
+```
+
+**Checklist - Create these agent files:**
+- [ ] `intake_agent.py` - Parse user input
+- [ ] `cluster_agent.py` - Group similar orders (optional for MVP)
+- [ ] `supplier_agent.py` - Get quotes using tools
+- [ ] `commit_agent.py` - Generate PO, UPI link
+- [ ] `sales_agent.py` - Create micro store
+- [ ] `ops_agent.py` - Monitor and alert
+- [ ] `cash_agent.py` - Ledger management
+- [ ] `learn_agent.py` - Update stats
+
+### 4.3 Orchestrator (Wire All Agents)
+**File:** `src/karigar/orchestrators/workflow.py`
+
+```python
+from langgraph.graph import StateGraph, START, END
+from karigar.schemas.state import KarigarState
+from karigar.agents.intake_agent import IntakeAgent
+# Import other agents...
+
+class KarigarWorkflow:
+    def __init__(self):
+        self.graph = StateGraph(KarigarState)
+        self._build_graph()
+    
+    def _build_graph(self):
+        # Add nodes
+        self.graph.add_node("intake", IntakeAgent().process)
+        self.graph.add_node("supplier", SupplierAgent().process)
+        self.graph.add_node("commit", CommitAgent().process)
+        self.graph.add_node("sales", SalesAgent().process)
+        self.graph.add_node("cash", CashAgent().process)
+        
+        # Add edges
+        self.graph.add_edge(START, "intake")
+        self.graph.add_edge("intake", "supplier")
+        self.graph.add_edge("supplier", "commit")
+        self.graph.add_edge("commit", "sales")
+        self.graph.add_edge("sales", "cash")
+        self.graph.add_edge("cash", END)
+        
+        self.compiled = self.graph.compile()
+    
+    async def run(self, initial_state: dict):
+        return await self.compiled.ainvoke(initial_state)
+```
+
+---
+
+## **PHASE 5: FastAPI Backend (Hours 15-16)**
+
+### 5.1 API Routes
+**File:** `src/karigar/api/agent_routes.py`
+
+```python
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+from karigar.orchestrators.workflow import KarigarWorkflow
+
+router = APIRouter(prefix="/api", tags=["agents"])
+
+class MaterialRequestInput(BaseModel):
+    artisan_id: str
+    message: str
+
+@router.post("/request")
+async def create_request(input: MaterialRequestInput):
+    workflow = KarigarWorkflow()
+    initial_state = {
+        "messages": [{"role": "user", "content": input.message}],
+        "artisan_id": input.artisan_id,
+        "status": "started"
+    }
+    result = await workflow.run(initial_state)
+    return result
+
+@router.get("/status/{request_id}")
+async def get_status(request_id: str):
+    # Query database for status
+    pass
+
+@router.get("/stores/{artisan_id}")
+async def get_stores(artisan_id: str):
+    # Return micro store URLs
+    pass
+```
+
+**Checklist:**
+- [ ] Create `agent_routes.py`
+- [ ] Create `admin_routes.py` (for monitoring)
+- [ ] Wire routes to `main.py`
+- [ ] Add CORS middleware
+- [ ] Add error handlers
+
+### 5.2 Main App
+**File:** `src/karigar/main.py`
+
+```python
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from karigar.api import agent_routes, admin_routes
+
+app = FastAPI(
+    title="KarigarAgent API",
+    version="1.0.0",
+    description="Production-ready artisan management system"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(agent_routes.router)
+app.include_router(admin_routes.router)
+
+@app.get("/")
+async def root():
+    return {"message": "KarigarAgent API is running"}
+```
+
+---
+
+## **PHASE 6: Beautiful Frontend (Hours 17-20)**
+
+### 6.1 React Setup
+```bash
+npx create-react-app karigar-frontend
+cd karigar-frontend
+npm install @xyflow/react axios lucide-react tailwindcss
+```
+
+### 6.2 Flow Visualization Component
+**File:** `src/components/AgentFlow.jsx`
+
+```jsx
+import React, { useState, useCallback } from 'react';
+import {
+  ReactFlow,
+  MiniMap,
+  Controls,
+  Background,
+  useNodesState,
+  useEdgesState,
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
+
+const initialNodes = [
+  { id: 'intake', position: { x: 250, y: 0 }, data: { label: '📥 Intake' }, style: { background: '#e3f2fd', padding: 10 } },
+  { id: 'supplier', position: { x: 250, y: 100 }, data: { label: '🏪 Supplier Search' } },
+  { id: 'commit', position: { x: 250, y: 200 }, data: { label: '✅ Commit Order' } },
+  { id: 'sales', position: { x: 250, y: 300 }, data: { label: '🛍️ Create Store' } },
+  { id: 'cash', position: { x: 250, y: 400 }, data: { label: '💰 Ledger' } },
+];
+
+const initialEdges = [
+  { id: 'e1-2', source: 'intake', target: 'supplier', animated: true },
+  { id: 'e2-3', source: 'supplier', target: 'commit', animated: true },
+  { id: 'e3-4', source: 'commit', target: 'sales', animated: true },
+  { id: 'e4-5', source: 'sales', target: 'cash', animated: true },
+];
+
+export default function AgentFlow() {
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+
+  return (
+    <div style={{ width: '100%', height: '600px' }}>
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        fitView
+      >
+        <Controls />
+        <MiniMap />
+        <Background variant="dots" gap={12} size={1} />
+      </ReactFlow>
+    </div>
+  );
+}
+```
+
+### 6.3 Request Form
+**File:** `src/components/RequestForm.jsx`
+
+```jsx
+import React, { useState } from 'react';
+import axios from 'axios';
+
+export default function RequestForm() {
+  const [formData, setFormData] = useState({
+    artisan_id: '',
+    message: ''
+  });
+  const [result, setResult] = useState(null);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post('http://localhost:8000/api/request', formData);
+      setResult(response.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg">
+      <h2 className="text-2xl font-bold mb-4">Request Materials</h2>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <input
+          type="text"
+          placeholder="Your Artisan ID"
+          className="w-full p-3 border rounded"
+          value={formData.artisan_id}
+          onChange={(e) => setFormData({...formData, artisan_id: e.target.value})}
+        />
+        <textarea
+          placeholder="I need 100 kg cement in Delhi by next week, budget 5000 rupees"
+          className="w-full p-3 border rounded h-32"
+          value={formData.message}
+          onChange={(e) => setFormData({...formData, message: e.target.value})}
+        />
+        <button
+          type="submit"
+          className="w-full bg-blue-500 text-white p-3 rounded hover:bg-blue-600"
+        >
+          Submit Request
+        </button>
+      </form>
+      
+      {result && (
+        <div className="mt-6 p-4 bg-green-50 rounded">
+          <h3 className="font-bold">Success!</h3>
+          <pre>{JSON.stringify(result, null, 2)}</pre>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+**Checklist:**
+- [ ] Create React app
+- [ ] Build `AgentFlow.jsx`
+- [ ] Build `RequestForm.jsx`
+- [ ] Build `Dashboard.jsx` (show orders, stores, ledger)
+- [ ] Style with Tailwind
+- [ ] Connect to backend API
+
+---
+
+## **PHASE 7: Testing & Polish (Hours 21-24)**
+
+### 7.1 Backend Tests
+**File:** `tests/test_agents.py`
+
+```python
+import pytest
+from karigar.agents.intake_agent import IntakeAgent
+
+def test_intake_agent():
+    agent = IntakeAgent(llm=None)  # Use mock LLM
+    state = {
+        "messages": [{"role": "user", "content": "I need 50 bricks in Mumbai"}],
+        "status": "new"
+    }
+    result = agent.process(state)
+    assert "material_request" in result
+    assert result["material_request"]["material"] == "bricks"
+```
+
+**Checklist:**
+- [ ] Write unit tests for each agent
+- [ ] Write integration tests for workflow
+- [ ] Write API endpoint tests
+- [ ] Test error scenarios
+- [ ] Load test with 10 concurrent requests
+
+### 7.2 Documentation
+**File:** `README.md`
+
+```markdown
+# KarigarAgent Lite
+
+## Quick Start
+```bash
+# Backend
+python -m uvicorn karigar.main:app --reload
+
+# Frontend
+cd karigar-frontend
+npm start
+```
+
+## Architecture
+[Flow diagram]
+
+## API Endpoints
+...
+```
+
+**Checklist:**
+- [ ] Write README
+- [ ] Add API documentation (auto-generated by FastAPI)
+- [ ] Create deployment guide
+- [ ] Record demo video
+
+---
+
+## **DEPLOYMENT CHECKLIST**
+
+### Docker
+```dockerfile
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY src/ ./src/
+ENV PYTHONPATH=/app/src
+CMD ["uvicorn", "karigar.main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+- [ ] Build Docker image
+- [ ] Test container locally
+- [ ] Deploy to cloud (optional)
+- [ ] Set up monitoring
+
+---
+
+## **🎯 MVP SUCCESS CRITERIA**
+
+✅ **Must Have:**
+- [ ] User can submit material request via UI
+- [ ] System fetches supplier quotes (local + optional Perplexity)
+- [ ] System generates PO PDF and UPI payment link
+- [ ] System creates micro-store HTML page with QR code
+- [ ] System records transaction in ledger
+- [ ] Flow visualization shows each step
+- [ ] All data persists in SQLite
+- [ ] Frontend is responsive and looks professional
+
+✅ **Nice to Have (Post-MVP):**
+- [ ] WhatsApp integration
+- [ ] Multi-language support
+- [ ] Mobile app
+- [ ] Advanced pooling/clustering
+- [ ] Real-time notifications
+
+---
+
+## **⚡ SPEED RUN TIPS**
+
+1. **Use AI assistants** - Let Cursor/Claude generate boilerplate
+2. **Start with one agent** - Get Intake → Supplier → Commit working first
+3. **Mock the LLM initially** - Use hardcoded responses to test flow
+4. **Commit often** - Push to Git after each working feature
+5. **Don't over-engineer** - Ship MVP, iterate later
+
+---
+
+## **📞 DEBUGGING CHECKLIST**
+
+If something breaks:
+- [ ] Check FastAPI logs: `uvicorn --log-level debug`
+- [ ] Check database: `sqlite3 karigar.db` → `.tables` → `SELECT * FROM ...`
+- [ ] Check agent outputs: Add `print(state)` in each agent
+- [ ] Check frontend console for errors
+- [ ] Test API with Postman/curl first before blaming frontend
+
+---
+
+## **🏆 FINAL DELIVERABLES**
+
+When done, you should have:
+1. ✅ Working backend API
+2. ✅ Beautiful React frontend with flow visualization
+3. ✅ All 8 agents implemented and tested
+4. ✅ SQLite database with schemas
+5. ✅ PDF/UPI/QR/HTML generators
+6. ✅ Docker setup
+7. ✅ README and docs
+8. ✅ Demo video/screenshots
+
+---
+
+**NOW GO BUILD! 🚀**
+
+Start with Phase 1, check off items as you complete them, and you'll have a production-ready MVP in no time. Let's fucking go! 💪

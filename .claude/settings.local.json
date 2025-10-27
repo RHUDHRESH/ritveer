@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(awk:*)",
+      "Bash(python -m py_compile:*)",
+      "Bash(cat:*)",
+      "Bash(curl:*)",
+      "Bash(timeout 5 python:*)",
+      "Bash(pkill:*)",
+      "Bash(python -c:*)",
+      "Bash(find:*)",
+      "Bash(taskkill:*)",
+      "Bash(python -m json.tool:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
